@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.ui.applab.alarm",
       "supportsTablet": true,
       "entitlements": {},
       "infoPlist": {
@@ -25,6 +26,7 @@
       }
     },
     "android": {
+      "package": "com.ui.applab.alarm",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
