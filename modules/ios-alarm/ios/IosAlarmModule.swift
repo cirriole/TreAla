@@ -23,7 +23,7 @@ public class IosAlarmModule: Module {
     AsyncFunction("triggerNativeAlarm") { (stationName: String) in
       do {
         let countdown = Alarm.CountdownDuration(preAlert: 1)
-        let attributes = AlarmPresentation.Alert(title: "まもなく \(stationName) です！", primaryButtonTitle: "停止")
+        let attributes = AlarmPresentation.FullScreen(title: "まもなく \(stationName) です！", primaryButtonTitle: "停止")
         let config = AlarmConfiguration(countdownDuration: countdown, attributes: attributes)
         try await AlarmManager.shared.schedule(id: UUID().uuidString, configuration: config)
       } catch {

@@ -1,13 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, FlatList, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, FlatList, SafeAreaView, Alert, TextInput, ActivityIndicator } from 'react-native';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import { triggerNativeAlarm, stopNativeAlarm, startLiveActivity, updateLiveActivity, stopLiveActivity, requestAlarmPermission } from '../modules/ios-alarm';
 
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
+
+type Station = {
+  id: string;
+  name: string;
+  line: string;
+  prefecture: string;
+  latitude: number;
+  longitude: number;
+};
 
 // TODO: TaskManager will be implemented completely in Step 2/4 when native module is ready
 TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
@@ -58,13 +68,6 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
   }
 });
 
-const STATIONS = [
-  { id: '1', name: '横浜駅', latitude: 35.4658, longitude: 139.6223 },
-  { id: '2', name: '菊名駅', latitude: 35.5094, longitude: 139.6309 },
-  { id: '3', name: '妙蓮寺駅', latitude: 35.4988, longitude: 139.6322 },
-  { id: '4', name: '岸根公園駅', latitude: 35.4957, longitude: 139.6046 },
-];
-
 const RADIUS_OPTIONS = [
   { label: '300m', value: 300 },
   { label: '500m', value: 500 },
@@ -84,27 +87,82 @@ export default function Index() {
     secondaryText: isDark ? '#EBEBF599' : '#3C3C4399',
   };
 
-  const [targetStation, setTargetStation] = useState(STATIONS[0]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Station[]>([]);
+  const [favorites, setFavorites] = useState<Station[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const [targetStation, setTargetStation] = useState<Station | null>(null);
   const [radius, setRadius] = useState(500);
   const [isAlarmActive, setIsAlarmActive] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
+  
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const hasTriggeredAlarm = useRef<boolean>(false);
 
-  // Load saved target station
+  // Load saved target station and favorites
   useEffect(() => {
-    AsyncStorage.getItem('favoriteStationId').then(id => {
-      if (id) {
-        const saved = STATIONS.find(s => s.id === id);
-        if (saved) setTargetStation(saved);
+    AsyncStorage.getItem('favoriteStations_v2').then(data => {
+      if (data) {
+        const favs = JSON.parse(data);
+        setFavorites(favs);
+      }
+    });
+    AsyncStorage.getItem('lastSelectedStation').then(data => {
+      if (data) {
+        setTargetStation(JSON.parse(data));
       }
     });
   }, []);
 
-  const handleStationSelect = async (item: typeof STATIONS[0]) => {
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    const keyword = searchQuery.trim().replace(/駅$/, '');
+    try {
+      const res = await fetch(`https://express.heartrails.com/api/json?method=getStations&name=${encodeURIComponent(keyword)}`);
+      const data = await res.json();
+      if (data.response && data.response.station) {
+        const stations: Station[] = data.response.station.map((s: any) => ({
+          id: `${s.name}-${s.line}-${s.prefecture}`,
+          name: s.name,
+          line: s.line,
+          prefecture: s.prefecture,
+          latitude: s.y,
+          longitude: s.x,
+        }));
+        setSearchResults(stations);
+      } else {
+        setSearchResults([]);
+        Alert.alert("検索結果", "駅が見つかりませんでした。正式名称を入力してください（例：新宿）");
+      }
+    } catch (e) {
+      Alert.alert("エラー", "検索に失敗しました");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const toggleFavorite = async (station: Station) => {
+    const isFav = favorites.some(f => f.id === station.id);
+    let newFavs;
+    if (isFav) {
+      newFavs = favorites.filter(f => f.id !== station.id);
+    } else {
+      newFavs = [...favorites, station];
+    }
+    setFavorites(newFavs);
+    await AsyncStorage.setItem('favoriteStations_v2', JSON.stringify(newFavs));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleStationSelect = async (item: Station) => {
     if (isAlarmActive) return;
     setTargetStation(item);
-    await AsyncStorage.setItem('favoriteStationId', item.id);
+    await AsyncStorage.setItem('lastSelectedStation', JSON.stringify(item));
   };
 
   // Haversine formula to calculate distance in meters
@@ -124,6 +182,7 @@ export default function Index() {
   };
 
   const handleLocationUpdate = async (lat: number, lon: number) => {
+    if (!targetStation) return;
     const dist = getDistance(
       lat,
       lon,
@@ -169,6 +228,8 @@ export default function Index() {
       stopNativeAlarm();
       stopLiveActivity();
     } else {
+      if (!targetStation) return;
+
       // Start alarm
       hasTriggeredAlarm.current = false;
       await AsyncStorage.setItem('hasTriggeredAlarm', 'false');
@@ -228,8 +289,9 @@ export default function Index() {
     }
   };
 
-  const renderStationCard = ({ item }: { item: typeof STATIONS[0] }) => {
-    const isSelected = item.id === targetStation.id;
+  const renderStationCard = ({ item }: { item: Station }) => {
+    const isSelected = targetStation?.id === item.id;
+    const isFav = favorites.some(f => f.id === item.id);
     return (
       <TouchableOpacity
         style={[
@@ -244,15 +306,17 @@ export default function Index() {
         activeOpacity={0.7}
       >
         <View style={styles.cardContent}>
-          <Text style={{ fontSize: 24 }}>📍</Text>
-          <View style={{ marginLeft: 16 }}>
+          <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.text }}>
               {item.name}
             </Text>
             <Text style={{ fontSize: 12, color: theme.secondaryText, marginTop: 4 }}>
-              Lat: {item.latitude.toFixed(4)}, Lon: {item.longitude.toFixed(4)}
+              {item.line} ({item.prefecture})
             </Text>
           </View>
+          <TouchableOpacity onPress={() => toggleFavorite(item)} style={{ padding: 8 }}>
+            <Ionicons name={isFav ? "star" : "star-outline"} size={24} color={isFav ? theme.orange : theme.secondaryText} />
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -271,13 +335,57 @@ export default function Index() {
 
           <View style={styles.content}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>目的駅を選択</Text>
-            <View style={styles.listContainer}>
-              <FlatList
-                data={STATIONS}
-                keyExtractor={(item) => item.id}
-                renderItem={renderStationCard}
-                showsVerticalScrollIndicator={false}
+            
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+              <TextInput
+                style={[styles.searchInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.cardBorder }]}
+                placeholder="駅名を検索（例：品川）"
+                placeholderTextColor={theme.secondaryText}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+                clearButtonMode="while-editing"
               />
+              <TouchableOpacity
+                style={[styles.searchButton, { backgroundColor: theme.orange }]}
+                onPress={handleSearch}
+              >
+                <Ionicons name="search" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.listContainer}>
+              {isSearching ? (
+                <ActivityIndicator size="large" color={theme.orange} style={{ marginTop: 40 }} />
+              ) : searchQuery.length > 0 && searchResults.length > 0 ? (
+                <FlatList
+                  data={searchResults}
+                  keyExtractor={(item) => item.id}
+                  renderItem={renderStationCard}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                />
+              ) : searchQuery.length > 0 && searchResults.length === 0 ? (
+                <Text style={{ color: theme.secondaryText, textAlign: 'center', marginTop: 40 }}>
+                  検索結果がありません
+                </Text>
+              ) : favorites.length > 0 ? (
+                <>
+                  <Text style={{ fontSize: 12, color: theme.secondaryText, marginBottom: 8, fontWeight: 'bold' }}>お気に入り</Text>
+                  <FlatList
+                    data={favorites}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderStationCard}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  />
+                </>
+              ) : (
+                <Text style={{ color: theme.secondaryText, textAlign: 'center', marginTop: 40, lineHeight: 22 }}>
+                  お気に入りがありません。{'\n'}上の検索バーから駅名を入力して探してください。
+                </Text>
+              )}
             </View>
 
             <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 24 }]}>アラーム判定半径</Text>
@@ -307,8 +415,12 @@ export default function Index() {
 
           <View style={styles.footer}>
             <TouchableOpacity
-              style={[styles.mainButton, { backgroundColor: theme.orange }]}
+              style={[
+                styles.mainButton, 
+                { backgroundColor: targetStation ? theme.orange : theme.cardBorder }
+              ]}
               onPress={toggleAlarm}
+              disabled={!targetStation}
             >
               <Text style={styles.mainButtonText}>アラームをセット</Text>
             </TouchableOpacity>
@@ -319,18 +431,23 @@ export default function Index() {
           {/* Debug Teleport Button */}
           <TouchableOpacity
             style={{ position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 8, backgroundColor: 'rgba(150,150,150,0.2)', borderRadius: 8 }}
-            onPress={() => handleLocationUpdate(targetStation.latitude, targetStation.longitude)}
+            onPress={() => {
+              if (targetStation) handleLocationUpdate(targetStation.latitude, targetStation.longitude);
+            }}
           >
             <Text style={{ fontSize: 12, color: theme.text }}>[Test] ﾃﾚﾎﾟｰﾄ</Text>
           </TouchableOpacity>
 
           <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={{ fontSize: 80, marginBottom: 24 }}>📡</Text>
+            <Ionicons name="radio" size={80} color={theme.orange} style={{ marginBottom: 24 }} />
             <Text style={{ fontSize: 20, color: theme.secondaryText, fontWeight: '600' }}>
               モニタリング中
             </Text>
             <Text style={{ fontSize: 36, fontWeight: '900', color: theme.text, marginTop: 8 }}>
-              {targetStation.name}
+              {targetStation?.name}
+            </Text>
+            <Text style={{ fontSize: 16, color: theme.secondaryText, marginTop: 4 }}>
+              {targetStation?.line}
             </Text>
             
             <View style={[styles.statusCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
@@ -386,8 +503,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
   },
+  searchInput: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    fontSize: 16,
+  },
+  searchButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   listContainer: {
-    height: 300, // Fixed height for items
+    flex: 1,
+    minHeight: 180,
   },
   card: {
     borderRadius: 16,
@@ -402,6 +535,7 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   segmentContainer: {
     flexDirection: 'row',
