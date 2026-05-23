@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { triggerNativeAlarm, stopNativeAlarm, startLiveActivity, updateLiveActivity, stopLiveActivity, requestAlarmPermission } from '../modules/ios-alarm';
+import { triggerNativeAlarm, stopNativeAlarm, startLiveActivity, updateLiveActivity, stopLiveActivity, requestAlarmPermission } from '../modules/expo-ios-alarm';
 
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
 

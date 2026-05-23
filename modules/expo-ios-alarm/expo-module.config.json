@@ -1,0 +1,6 @@
+{
+  "name": "ExpoIosAlarm",
+  "ios": {
+    "modules": ["ExpoIosAlarmModule"]
+  }
+}

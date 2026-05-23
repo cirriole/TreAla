@@ -3,11 +3,11 @@ import AlarmKit
 import ActivityKit
 import UserNotifications
 
-public class IosAlarmModule: Module {
+public class ExpoIosAlarmModule: Module {
   private var currentActivity: Any?
 
   public func definition() -> ModuleDefinition {
-    Name("IosAlarm")
+    Name("ExpoIosAlarm")
 
     AsyncFunction("requestAlarmPermission") { () -> Bool in
       do {
