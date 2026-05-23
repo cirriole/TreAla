@@ -24,8 +24,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Prebuild (Convert to Native Project)
-        run: npx expo prebuild --platform ios
+      - name: Expo Prebuild
+        run: npx expo prebuild --platform ios --clean
       - name: Build Unsigned IPA with Xcode
         run: |
           # ワークスペース名を取得

@@ -1,6 +1,7 @@
 import ExpoModulesCore
 import AlarmKit
 import ActivityKit
+import UserNotifications
 
 public class IosAlarmModule: Module {
   private var currentActivity: Any?
@@ -10,10 +11,11 @@ public class IosAlarmModule: Module {
 
     AsyncFunction("requestAlarmPermission") { () -> Bool in
       do {
+        try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
         try await AlarmManager.shared.requestAuthorization()
         return true
       } catch {
-        print("AlarmKit authorization failed: \(error)")
+        print("AlarmKit or Notification authorization failed: \(error)")
         return false
       }
     }
@@ -28,6 +30,13 @@ public class IosAlarmModule: Module {
         } catch {
           print("Failed to schedule AlarmKit alarm: \(error)")
         }
+        // Fallback standard notification to ensure it rings/vibrates even if AlarmKit fails or is restricted
+        let content = UNMutableNotificationContent()
+        content.title = "まもなく \(stationName) です！"
+        content.body = "目的地に接近しました"
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        try? await UNUserNotificationCenter.current().add(request)
       }
     }
 

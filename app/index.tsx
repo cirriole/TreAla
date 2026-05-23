@@ -9,17 +9,50 @@ import { triggerNativeAlarm, stopNativeAlarm, startLiveActivity, updateLiveActiv
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
 
 // TODO: TaskManager will be implemented completely in Step 2/4 when native module is ready
-TaskManager.defineTask(BACKGROUND_LOCATION_TASK, ({ data, error }) => {
+TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
   if (error) {
     console.error(error);
     return;
   }
   if (data) {
-    const { eventType, region } = data as any;
-    console.log("Background location event:", eventType, region);
-    if (eventType === Location.GeofencingEventType.Enter) {
-      const station = STATIONS.find(s => s.id === region.identifier);
-      triggerNativeAlarm(station ? station.name : "目的駅");
+    const { locations } = data as any;
+    if (locations && locations.length > 0) {
+      const location = locations[0];
+      
+      try {
+        const targetStr = await AsyncStorage.getItem('activeAlarmTarget');
+        const triggeredStr = await AsyncStorage.getItem('hasTriggeredAlarm');
+        
+        if (targetStr && triggeredStr !== 'true') {
+          const { station, radius } = JSON.parse(targetStr);
+          
+          // Haversine formula
+          const R = 6371e3;
+          const lat1 = location.coords.latitude;
+          const lon1 = location.coords.longitude;
+          const lat2 = station.latitude;
+          const lon2 = station.longitude;
+          
+          const φ1 = (lat1 * Math.PI) / 180;
+          const φ2 = (lat2 * Math.PI) / 180;
+          const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+          const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+          const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const dist = R * c;
+
+          // Note: updateLiveActivity can be called from headless JS!
+          updateLiveActivity(dist);
+
+          if (dist <= radius) {
+            await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
+            triggerNativeAlarm(station.name);
+          }
+        }
+      } catch(e) {
+        console.error("Background task error", e);
+      }
     }
   }
 });
@@ -99,11 +132,11 @@ export default function Index() {
     setDistance(dist);
     updateLiveActivity(dist);
 
-    // If we are within radius, trigger alarm manually (useful for foreground testing in Expo Go)
+    // If we are within radius, trigger alarm manually
     if (dist <= radius && !hasTriggeredAlarm.current) {
       hasTriggeredAlarm.current = true;
+      AsyncStorage.setItem('hasTriggeredAlarm', 'true');
       triggerNativeAlarm(targetStation.name);
-      alert(`【アラーム発動】\n${targetStation.name}の半径${radius}m以内に入りました！`);
     }
   };
 
@@ -117,15 +150,23 @@ export default function Index() {
         locationSubscription.current = null;
       }
       try {
-        await Location.stopGeofencingAsync(BACKGROUND_LOCATION_TASK);
+        await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
       } catch (e) {
-        console.log("Failed to stop geofencing (expected in Expo Go)", e);
+        console.log("Failed to stop background updates (expected in Expo Go)", e);
       }
+      await AsyncStorage.removeItem('activeAlarmTarget');
+      await AsyncStorage.setItem('hasTriggeredAlarm', 'false');
+      hasTriggeredAlarm.current = false;
       stopNativeAlarm();
       stopLiveActivity();
     } else {
       // Start alarm
       hasTriggeredAlarm.current = false;
+      await AsyncStorage.setItem('hasTriggeredAlarm', 'false');
+      await AsyncStorage.setItem('activeAlarmTarget', JSON.stringify({
+        station: targetStation,
+        radius: radius
+      }));
       
       // Request AlarmKit permissions
       await requestAlarmPermission();
@@ -147,21 +188,17 @@ export default function Index() {
 
       setIsAlarmActive(true);
       
-      // Start geofencing if background is available
+      // Start location updates if background is available
       if (bgStatus === 'granted') {
         try {
-          await Location.startGeofencingAsync(BACKGROUND_LOCATION_TASK, [
-            {
-              identifier: targetStation.id,
-              latitude: targetStation.latitude,
-              longitude: targetStation.longitude,
-              radius: radius,
-              notifyOnEnter: true,
-              notifyOnExit: false,
-            },
-          ]);
+          await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
+            accuracy: Location.Accuracy.BestForNavigation,
+            timeInterval: 1000,
+            distanceInterval: 1,
+            showsBackgroundLocationIndicator: true, // Crucial for iOS background execution
+          });
         } catch (e) {
-          console.warn("Geofencing is not available.", e);
+          console.warn("Background location is not available.", e);
         }
       }
 
@@ -171,8 +208,9 @@ export default function Index() {
       // Start live watching for UI and Live Activity
       locationSubscription.current = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.High,
-          distanceInterval: 10,
+          accuracy: Location.Accuracy.BestForNavigation,
+          timeInterval: 1000,
+          distanceInterval: 1,
         },
         (location) => {
           handleLocationUpdate(location.coords.latitude, location.coords.longitude);
