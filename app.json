@@ -9,7 +9,19 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "audio",
+          "processing"
+        ],
+        "NSLocationWhenInUseUsageDescription": "駅への接近を監視するために位置情報を使用します。",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "バックグラウンドで駅への接近を監視し、アラームを鳴らすために位置情報を使用します。",
+        "NSLocationAlwaysUsageDescription": "バックグラウンドで駅への接近を監視し、アラームを鳴らすために位置情報を使用します。",
+        "NSAlarmKitUsageDescription": "バックグラウンドで駅への接近を検知した際に、マナーモードを貫通するシステムアラームを鳴らすために使用します",
+        "NSSupportsLiveActivities": true
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -37,6 +49,13 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "バックグラウンドで駅への接近を監視し、アラームを鳴らすために位置情報を使用します。",
+          "locationWhenInUsePermission": "駅への接近を監視するために位置情報を使用します。"
         }
       ]
     ],
