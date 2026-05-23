@@ -14,6 +14,25 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20
+          cache: "npm" # 【追加ハック①】npmパッケージのダウンロードを省略
+
+      # 【追加ハック②】CocoaPods（iOSのライブラリ群）をキャッシュ
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      # 【追加ハック③】Xcodeのビルドデータ（一番時間がかかる部分）をキャッシュ
+      - name: Cache Xcode Derived Data
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-xcode-deriveddata-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-deriveddata-
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -24,8 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Expo Prebuild
-        run: npx expo prebuild --platform ios --clean
+      - name: Prebuild (Convert to Native Project)
+        run: npx expo prebuild --platform ios
+
       - name: Build Unsigned IPA with Xcode
         run: |
           # ワークスペース名を取得
