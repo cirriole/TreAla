@@ -198,13 +198,8 @@ export default function Index() {
       AsyncStorage.setItem('hasTriggeredAlarm', 'true');
       await triggerNativeAlarm(targetStation.name);
       
-      // フォアグラウンド動作時のフィードバック（iOSはフォアグラウンドで通知が出ないため）
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert(
-        "アラーム",
-        `まもなく ${targetStation.name} です！`,
-        [{ text: "停止", onPress: () => toggleAlarm() }]
-      );
+      // フォアグラウンド動作時でも AlarmKit が全画面UIを表示するため
+      // Alert.alertのフォールバックは使用しません（AlarmKitの表示をブロックしてしまうため）
     }
   };
 

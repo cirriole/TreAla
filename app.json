@@ -10,9 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "entitlements": {
-        "com.apple.developer.alarmkit": true
-      },
+      "entitlements": {},
       "infoPlist": {
         "UIBackgroundModes": [
           "location",
