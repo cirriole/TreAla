@@ -16,18 +16,24 @@ public class IosAlarmModule: Module {
         return true
       } catch {
         print("AlarmKit or Notification authorization failed: \(error)")
-        return false
+        throw Exception(name: "AuthError", description: error.localizedDescription)
       }
     }
 
     AsyncFunction("triggerNativeAlarm") { (stationName: String) in
       do {
-        let countdown = Alarm.CountdownDuration(preAlert: 0)
-        let attributes = AlarmPresentation.FullScreen(title: "まもなく \(stationName) です！")
-        let config = AlarmConfiguration(countdownDuration: countdown, attributes: attributes)
-        try await AlarmManager.shared.schedule(id: UUID().uuidString, configuration: config)
+        // Use AlarmPresentation.Alert which natively renders as a full-screen slider if no custom buttons disable it
+        let alert = AlarmPresentation.Alert(title: "まもなく \(stationName) です！")
+        let attributes = AlarmAttributes<EmptyMetadata>(presentation: AlarmPresentation(alert: alert), tintColor: .orange)
+        
+        // Schedule immediately by using a 0 countdown duration
+        try await AlarmManager.shared.schedule(
+            id: UUID(),
+            configuration: .timer(duration: 0, attributes: attributes)
+        )
       } catch {
         print("Failed to schedule AlarmKit alarm: \(error)")
+        throw Exception(name: "AlarmKitError", description: error.localizedDescription)
       }
 
       if #available(iOS 16.1, *) {

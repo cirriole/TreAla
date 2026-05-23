@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
 import { triggerNativeAlarm, stopNativeAlarm, startLiveActivity, updateLiveActivity, stopLiveActivity, requestAlarmPermission } from '../modules/ios-alarm';
 
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
@@ -196,7 +197,12 @@ export default function Index() {
     if (dist <= radius && !hasTriggeredAlarm.current) {
       hasTriggeredAlarm.current = true;
       AsyncStorage.setItem('hasTriggeredAlarm', 'true');
-      await triggerNativeAlarm(targetStation.name);
+      
+      try {
+        await triggerNativeAlarm(targetStation.name);
+      } catch (error) {
+        Alert.alert("ネイティブエラー発生 (Trigger)", String(error));
+      }
       
       // フォアグラウンド動作時でも AlarmKit が全画面UIを表示するため
       // Alert.alertのフォールバックは使用しません（AlarmKitの表示をブロックしてしまうため）
@@ -234,7 +240,11 @@ export default function Index() {
       }));
       
       // Request AlarmKit permissions
-      await requestAlarmPermission();
+      try {
+        await requestAlarmPermission();
+      } catch(error) {
+        Alert.alert("ネイティブエラー発生 (Permission)", String(error));
+      }
 
       const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
       
@@ -323,9 +333,16 @@ export default function Index() {
       
       {!isAlarmActive ? (
         <>
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.text }]}>トレアラ</Text>
-            <Text style={[styles.subtitle, { color: theme.secondaryText }]}>寝過ごし防止アラーム</Text>
+          <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+            <View>
+              <Text style={[styles.title, { color: theme.text }]}>トレアラ</Text>
+              <Text style={[styles.subtitle, { color: theme.secondaryText }]}>寝過ごし防止アラーム</Text>
+            </View>
+            <Link href="/settings" asChild>
+              <TouchableOpacity style={{ padding: 8 }}>
+                <Ionicons name="settings-outline" size={28} color={theme.text} />
+              </TouchableOpacity>
+            </Link>
           </View>
 
           <View style={styles.content}>

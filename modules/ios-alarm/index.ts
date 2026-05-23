@@ -6,15 +6,14 @@ export async function requestAlarmPermission(): Promise<boolean> {
   if (IosAlarm && IosAlarm.requestAlarmPermission) {
     return await IosAlarm.requestAlarmPermission();
   }
-  console.warn("IosAlarm.requestAlarmPermission is not available");
-  return false;
+  throw new Error("IosAlarm.requestAlarmPermission is not available");
 }
 
 export async function triggerNativeAlarm(stationName: string) {
   if (IosAlarm) {
     await IosAlarm.triggerNativeAlarm(stationName);
   } else {
-    console.warn("IosAlarm.triggerNativeAlarm is not available (requires custom iOS dev build)");
+    throw new Error("IosAlarm.triggerNativeAlarm is not available (requires custom iOS dev build)");
   }
 }
 
