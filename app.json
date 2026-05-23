@@ -64,6 +64,14 @@
           "locationAlwaysAndWhenInUsePermission": "バックグラウンドで駅への接近を監視し、アラームを鳴らすために位置情報を使用します。",
           "locationWhenInUsePermission": "駅への接近を監視するために位置情報を使用します。"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.1"
+          }
+        }
       ]
     ],
     "experiments": {
