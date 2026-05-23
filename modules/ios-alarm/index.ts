@@ -10,9 +10,9 @@ export async function requestAlarmPermission(): Promise<boolean> {
   return false;
 }
 
-export function triggerNativeAlarm(stationName: string) {
+export async function triggerNativeAlarm(stationName: string) {
   if (IosAlarm) {
-    IosAlarm.triggerNativeAlarm(stationName);
+    await IosAlarm.triggerNativeAlarm(stationName);
   } else {
     console.warn("IosAlarm.triggerNativeAlarm is not available (requires custom iOS dev build)");
   }

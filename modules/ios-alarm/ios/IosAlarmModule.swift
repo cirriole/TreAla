@@ -20,24 +20,31 @@ public class IosAlarmModule: Module {
       }
     }
 
-    Function("triggerNativeAlarm") { (stationName: String) in
-      Task {
-        do {
-          let countdown = Alarm.CountdownDuration(preAlert: 1)
-          let attributes = AlarmPresentation.Alert(title: "まもなく \(stationName) です！", primaryButtonTitle: "停止")
-          let config = AlarmConfiguration(countdownDuration: countdown, attributes: attributes)
-          try await AlarmManager.shared.schedule(id: UUID().uuidString, configuration: config)
-        } catch {
-          print("Failed to schedule AlarmKit alarm: \(error)")
-        }
-        // Fallback standard notification to ensure it rings/vibrates even if AlarmKit fails or is restricted
-        let content = UNMutableNotificationContent()
-        content.title = "まもなく \(stationName) です！"
-        content.body = "目的地に接近しました"
-        content.sound = .default
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        try? await UNUserNotificationCenter.current().add(request)
+    AsyncFunction("triggerNativeAlarm") { (stationName: String) in
+      do {
+        let countdown = Alarm.CountdownDuration(preAlert: 1)
+        let attributes = AlarmPresentation.Alert(title: "まもなく \(stationName) です！", primaryButtonTitle: "停止")
+        let config = AlarmConfiguration(countdownDuration: countdown, attributes: attributes)
+        try await AlarmManager.shared.schedule(id: UUID().uuidString, configuration: config)
+      } catch {
+        print("Failed to schedule AlarmKit alarm: \(error)")
       }
+
+      if #available(iOS 16.1, *) {
+        if let activity = self.currentActivity as? Activity<TrainAlarmWidgetAttributes> {
+          let state = TrainAlarmWidgetAttributes.ContentState(distance: 0)
+          let alertConfig = AlertConfiguration(title: "アラーム", body: "まもなく \(stationName) です！", sound: .default)
+          await activity.update(using: state, alertConfiguration: alertConfig)
+        }
+      }
+
+      // Fallback standard notification to ensure it rings/vibrates even if AlarmKit fails or is restricted
+      let content = UNMutableNotificationContent()
+      content.title = "まもなく \(stationName) です！"
+      content.body = "目的地に接近しました"
+      content.sound = .default
+      let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+      try? await UNUserNotificationCenter.current().add(request)
     }
 
     Function("stopNativeAlarm") {

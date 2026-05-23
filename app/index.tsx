@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, FlatList, SafeAreaView, Alert } from 'react-native';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
+import * as Haptics from 'expo-haptics';
 import { triggerNativeAlarm, stopNativeAlarm, startLiveActivity, updateLiveActivity, stopLiveActivity, requestAlarmPermission } from '../modules/ios-alarm';
 
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
@@ -47,7 +48,7 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
 
           if (dist <= radius) {
             await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
-            triggerNativeAlarm(station.name);
+            await triggerNativeAlarm(station.name);
           }
         }
       } catch(e) {
@@ -122,7 +123,7 @@ export default function Index() {
     return R * c;
   };
 
-  const handleLocationUpdate = (lat: number, lon: number) => {
+  const handleLocationUpdate = async (lat: number, lon: number) => {
     const dist = getDistance(
       lat,
       lon,
@@ -136,7 +137,15 @@ export default function Index() {
     if (dist <= radius && !hasTriggeredAlarm.current) {
       hasTriggeredAlarm.current = true;
       AsyncStorage.setItem('hasTriggeredAlarm', 'true');
-      triggerNativeAlarm(targetStation.name);
+      await triggerNativeAlarm(targetStation.name);
+      
+      // フォアグラウンド動作時のフィードバック（iOSはフォアグラウンドで通知が出ないため）
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert(
+        "アラーム",
+        `まもなく ${targetStation.name} です！`,
+        [{ text: "停止", onPress: () => toggleAlarm() }]
+      );
     }
   };
 
