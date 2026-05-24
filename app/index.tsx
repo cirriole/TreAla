@@ -8,6 +8,8 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 
+import { requestAlarmPermission, triggerNativeAlarm, stopNativeAlarm } from '../modules/expo-ios-alarm';
+
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
 
 type Station = {
@@ -61,7 +63,11 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
           // 駅に到着
           if (dist <= radius) {
             await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
-            // Haptics or Alarm trigger will go here when restored
+            try {
+              await triggerNativeAlarm(station.name);
+            } catch (err) {
+              console.error("Failed to trigger background alarm:", err);
+            }
           }
         }
       } catch(e) {
@@ -135,7 +141,7 @@ export default function Index() {
         setSearchResults([]);
         Alert.alert("検索結果", "駅が見つかりませんでした。正式名称を入力してください（例：新宿）");
       }
-    } catch (e) {
+    } catch {
       Alert.alert("エラー", "検索に失敗しました");
     } finally {
       setIsSearching(false);
@@ -190,9 +196,14 @@ export default function Index() {
     // 駅に到着
     if (dist <= radius) {
       try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        const triggered = await AsyncStorage.getItem('hasTriggeredAlarm');
+        if (triggered !== 'true') {
+          await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          await triggerNativeAlarm(targetStation.name);
+        }
       } catch (error) {
-        console.error(error);
+        console.error("Failed to trigger foreground alarm:", error);
       }
     }
   };
@@ -217,8 +228,26 @@ export default function Index() {
       }
       await AsyncStorage.removeItem('activeAlarmTarget');
       await AsyncStorage.setItem('hasTriggeredAlarm', 'false');
+      try {
+        await stopNativeAlarm();
+      } catch (error) {
+        console.error("Failed to stop native alarm:", error);
+      }
     } else {
       if (!targetStation) return;
+
+      // Request Alarm permission
+      try {
+        const hasAlarmPermission = await requestAlarmPermission();
+        if (!hasAlarmPermission) {
+          Alert.alert("エラー", "アラームの権限がありません！設定から許可してください。");
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to request alarm permission:", e);
+        Alert.alert("エラー", "アラームの権限リクエストに失敗しました。");
+        return;
+      }
 
       await AsyncStorage.setItem('hasTriggeredAlarm', 'false');
       await AsyncStorage.setItem('activeAlarmTarget', JSON.stringify({
@@ -232,7 +261,7 @@ export default function Index() {
       try {
         const res = await Location.requestBackgroundPermissionsAsync();
         bgStatus = res.status;
-      } catch (e) {
+      } catch {
         console.warn("Background location permission is not available (e.g. in Expo Go).");
       }
 
@@ -312,7 +341,7 @@ export default function Index() {
           <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
             <View>
               <Text style={[styles.title, { color: theme.text }]}>トレアラ</Text>
-              <Text style={[styles.subtitle, { color: theme.secondaryText }]}>目的地までの距離測定</Text>
+              <Text style={[styles.subtitle, { color: theme.secondaryText }]}>目的地で純正アラーム起動</Text>
             </View>
             <Link href="/settings" asChild>
               <TouchableOpacity style={{ padding: 8 }}>
@@ -410,7 +439,7 @@ export default function Index() {
               onPress={toggleMonitoring}
               disabled={!targetStation}
             >
-              <Text style={styles.mainButtonText}>モニタリングを開始</Text>
+              <Text style={styles.mainButtonText}>アラームをセット</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -429,7 +458,7 @@ export default function Index() {
           <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
             <Ionicons name="radio" size={80} color={theme.orange} style={{ marginBottom: 24 }} />
             <Text style={{ fontSize: 20, color: theme.secondaryText, fontWeight: '600' }}>
-              モニタリング中
+              アラーム待機中
             </Text>
             <Text style={{ fontSize: 36, fontWeight: '900', color: theme.text, marginTop: 8 }}>
               {targetStation?.name}
@@ -444,7 +473,7 @@ export default function Index() {
                 {distance !== null ? `${Math.round(distance)}m` : '計測中...'}
               </Text>
               <Text style={{ fontSize: 14, color: theme.secondaryText }}>
-                半径 {radius}m 以内に到着したか判定します
+                半径 {radius}m 以内でアラームが鳴ります
               </Text>
             </View>
           </View>
@@ -454,7 +483,7 @@ export default function Index() {
               style={[styles.mainButton, { backgroundColor: '#FF3B30' }]}
               onPress={toggleMonitoring}
             >
-              <Text style={styles.mainButtonText}>モニタリングを停止</Text>
+              <Text style={styles.mainButtonText}>アラームを解除</Text>
             </TouchableOpacity>
           </View>
         </>
