@@ -45,6 +45,10 @@ jobs:
       - name: Clean Xcode Derived Data
         run: rm -rf ~/Library/Developer/Xcode/DerivedData/*
 
+      - name: Fix Deployment Target
+        run: |
+          find . -name "Podfile" -exec sed -i '' 's/platform :ios, .*/platform :ios, '\''26.0'\''/g' {} +
+
       - name: Install iOS Pods
         run: |
           cd ios
