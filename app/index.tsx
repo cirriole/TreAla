@@ -241,7 +241,11 @@ export default function Index() {
       
       // Request AlarmKit permissions
       try {
-        await requestAlarmPermission();
+        const hasPermission = await requestAlarmPermission();
+        if (!hasPermission) {
+          Alert.alert("エラー", "アラームの権限がありません！設定から許可してください。");
+          return;
+        }
       } catch(error) {
         Alert.alert("ネイティブエラー発生 (Permission)", String(error));
       }
