@@ -54,6 +54,10 @@ jobs:
           cd ios
           pod install
 
+      - name: Force iOS Target Only
+        run: |
+          find ios -name "project.pbxproj" -exec sed -i '' 's/SUPPORTED_PLATFORMS = "macosx iphonesimulator iphoneos"/SUPPORTED_PLATFORMS = "iphonesimulator iphoneos"/g' {} +
+
       - name: Build Unsigned IPA with Xcode
         run: |
           PROJECT_NAME=$(ls ios | grep .xcworkspace | sed 's/\.xcworkspace//')
