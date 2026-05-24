@@ -20,7 +20,8 @@
         ],
         "NSLocationWhenInUseUsageDescription": "駅への接近を監視するために位置情報を使用します。",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "バックグラウンドで駅への接近を監視し、アラームを鳴らすために位置情報を使用します。",
-        "NSLocationAlwaysUsageDescription": "バックグラウンドで駅への接近を監視し、アラームを鳴らすために位置情報を使用します。"
+        "NSLocationAlwaysUsageDescription": "バックグラウンドで駅への接近を監視し、アラームを鳴らすために位置情報を使用します。",
+        "NSAlarmKitUsageDescription": "駅への接近を検知した際に、純正のアラーム画面でお知らせするために使用します。"
       }
     },
     "android": {

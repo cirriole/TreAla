@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 
+import { requestAlarmPermission, triggerNativeAlarm, stopNativeAlarm } from '../modules/expo-ios-alarm';
 
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
 
@@ -62,7 +63,11 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
           // 駅に到着
           if (dist <= radius) {
             await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
-              console.log(`到着しました: ${station.name}`);
+            try {
+              await triggerNativeAlarm(station.name);
+            } catch (err) {
+              console.error("Failed to trigger background alarm:", err);
+            }
           }
         }
       } catch(e) {
@@ -195,7 +200,7 @@ export default function Index() {
         if (triggered !== 'true') {
           await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-          console.log(`フォアグラウンドで到着しました: ${targetStation.name}`);
+          await triggerNativeAlarm(targetStation.name);
         }
       } catch (error) {
         console.error("Failed to trigger foreground alarm:", error);
@@ -223,10 +228,26 @@ export default function Index() {
       }
       await AsyncStorage.removeItem('activeAlarmTarget');
       await AsyncStorage.setItem('hasTriggeredAlarm', 'false');
-
+      try {
+        await stopNativeAlarm();
+      } catch (error) {
+        console.error("Failed to stop native alarm:", error);
+      }
     } else {
       if (!targetStation) return;
 
+      // Request Alarm permission
+      try {
+        const hasAlarmPermission = await requestAlarmPermission();
+        if (!hasAlarmPermission) {
+          Alert.alert("エラー", "アラームの権限がありません！設定から許可してください。");
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to request alarm permission:", e);
+        Alert.alert("エラー", "アラームの権限リクエストに失敗しました。");
+        return;
+      }
 
       await AsyncStorage.setItem('hasTriggeredAlarm', 'false');
       await AsyncStorage.setItem('activeAlarmTarget', JSON.stringify({
