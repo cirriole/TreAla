@@ -10,6 +10,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: 最新のベータ版Xcodeを強制セットアップ
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-beta
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
