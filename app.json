@@ -69,7 +69,7 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "16.1"
+            "deploymentTarget": "17.1"
           }
         }
       ]

@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, FlatList, SafeAreaView, Alert, TextInput, ActivityIndicator } from 'react-native';
-import * as Location from 'expo-location';
-import * as TaskManager from 'expo-task-manager';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StatusBar } from 'expo-status-bar';
-import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import { Link } from 'expo-router';
-import { triggerNativeAlarm, stopNativeAlarm, startLiveActivity, updateLiveActivity, stopLiveActivity, requestAlarmPermission } from '../modules/expo-ios-alarm';
+import { StatusBar } from 'expo-status-bar';
+import * as TaskManager from 'expo-task-manager';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { requestAlarmPermission, startLiveActivity, stopLiveActivity, stopNativeAlarm, triggerNativeAlarm, updateLiveActivity } from '../modules/expo-ios-alarm';
 
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
 
@@ -20,7 +20,7 @@ type Station = {
   longitude: number;
 };
 
-// TODO: TaskManager will be implemented completely in Step 2/4 when native module is ready
+// バックグラウンド位置情報タスク
 TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
   if (error) {
     console.error(error);
@@ -38,7 +38,7 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
         if (targetStr && triggeredStr !== 'true') {
           const { station, radius } = JSON.parse(targetStr);
           
-          // Haversine formula
+          // Haversine formula で距離計算
           const R = 6371e3;
           const lat1 = location.coords.latitude;
           const lon1 = location.coords.longitude;
@@ -54,9 +54,10 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
           const dist = R * c;
 
-          // Note: updateLiveActivity can be called from headless JS!
+          // ライブアクティビティを更新
           updateLiveActivity(dist);
 
+          // 到着：半径以内に到達
           if (dist <= radius) {
             await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
             await triggerNativeAlarm(station.name);
@@ -193,19 +194,17 @@ export default function Index() {
     setDistance(dist);
     updateLiveActivity(dist);
 
-    // If we are within radius, trigger alarm manually
+    // 駅に到着
     if (dist <= radius && !hasTriggeredAlarm.current) {
       hasTriggeredAlarm.current = true;
-      AsyncStorage.setItem('hasTriggeredAlarm', 'true');
+      await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
       
       try {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         await triggerNativeAlarm(targetStation.name);
       } catch (error) {
-        Alert.alert("ネイティブエラー発生 (Trigger)", String(error));
+        console.error("Failed to trigger alarm:", error);
       }
-      
-      // フォアグラウンド動作時でも AlarmKit が全画面UIを表示するため
-      // Alert.alertのフォールバックは使用しません（AlarmKitの表示をブロックしてしまうため）
     }
   };
 
@@ -444,16 +443,6 @@ export default function Index() {
         </>
       ) : (
         <>
-          {/* Debug Teleport Button */}
-          <TouchableOpacity
-            style={{ position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 8, backgroundColor: 'rgba(150,150,150,0.2)', borderRadius: 8 }}
-            onPress={() => {
-              if (targetStation) handleLocationUpdate(targetStation.latitude, targetStation.longitude);
-            }}
-          >
-            <Text style={{ fontSize: 12, color: theme.text }}>[Test] ﾃﾚﾎﾟｰﾄ</Text>
-          </TouchableOpacity>
-
           <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
             <Ionicons name="radio" size={80} color={theme.orange} style={{ marginBottom: 24 }} />
             <Text style={{ fontSize: 20, color: theme.secondaryText, fontWeight: '600' }}>

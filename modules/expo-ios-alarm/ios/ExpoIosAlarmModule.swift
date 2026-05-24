@@ -6,7 +6,7 @@ public class ExpoIosAlarmModule: Module {
         Name("ExpoIosAlarm")
 
         AsyncFunction("requestAlarmPermission") { () -> Bool in
-            guard #available(iOS 26.0, *) else { return false }
+            guard #available(iOS 17.1, *) else { return false }
             
             let state = AlarmManager.shared.authorizationState
             switch state {
@@ -25,51 +25,54 @@ public class ExpoIosAlarmModule: Module {
         }
 
         AsyncFunction("triggerNativeAlarm") { (stationName: String) in
-            guard #available(iOS 26.0, *) else {
-                print("AlarmKitはiOS 26以上で利用可能です")
+            guard #available(iOS 17.1, *) else {
+                print("AlarmKitはiOS 17.1以上で利用可能です")
                 return
             }
             
-            let alarmManager = AlarmManager()
             let alarmID = "treala-arrival-alarm"
             
-            let secondaryButton = AlarmPresentation.Alert.SecondaryButton(
-                title: "あと5分",
-                behavior: .countdown
-            )
-            
+            // シンプルなアラート設定
             let alert = AlarmPresentation.Alert(
-                title: "まもなく \(stationName) です！",
-                secondaryButton: secondaryButton,
-                secondaryButtonBehavior: .countdown
+                title: "到着しました",
+                subtitle: stationName
             )
             
             let presentation = AlarmPresentation(alert: alert)
+            
             let attributes = AlarmAttributes(
                 presentation: presentation,
-                tintColor: .systemBlue
+                tintColor: .systemGreen
             )
             
+            // アラームスケジュール：全画面表示で駅到着を通知
             let configuration = AlarmManager.AlarmConfiguration.timer(
-                duration: 1,
+                duration: 60, // 60秒間のアラーム
                 attributes: attributes
             )
             
             do {
-                _ = try await alarmManager.schedule(
+                // 既存のアラームがあれば削除
+                try await AlarmManager.shared.removeAlarm(id: alarmID)
+            } catch {
+                // 削除できなくても続行
+            }
+            
+            do {
+                _ = try await AlarmManager.shared.schedule(
                     id: alarmID,
                     configuration: configuration
                 )
+                print("駅到着アラームを発動しました: \(stationName)")
             } catch {
                 print("アラームのスケジュールに失敗しました: \(error)")
             }
         }
         
         AsyncFunction("stopNativeAlarm") { () in
-            guard #available(iOS 26.0, *) else { return }
-            let alarmManager = AlarmManager()
+            guard #available(iOS 17.1, *) else { return }
             do {
-                try await alarmManager.removeAlarm(id: "treala-arrival-alarm")
+                try await AlarmManager.shared.removeAlarm(id: "treala-arrival-alarm")
             } catch {
                 print("アラームのキャンセルに失敗しました: \(error)")
             }
