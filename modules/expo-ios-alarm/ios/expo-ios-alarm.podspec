@@ -11,8 +11,8 @@ Pod::Spec.new do |s|
 
   s.dependency 'ExpoModulesCore'
 
-  # We weak-link native AlarmKit framework so we do not fetch legacy CocoaPods
-  s.weak_framework = 'AlarmKit'
+  # Removed weak_framework to avoid 'ld: framework not found' on CI if SDK is missing.
+  # Swift's #if canImport and @available will handle auto-linking.
 
   s.source_files = '**/*.{h,m,swift}'
 end

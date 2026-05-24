@@ -14,25 +14,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: "npm" # 【追加ハック①】npmパッケージのダウンロードを省略
-
-      # 【追加ハック②】CocoaPods（iOSのライブラリ群）をキャッシュ
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Caches/CocoaPods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
-      # 【追加ハック③】Xcodeのビルドデータ（一番時間がかかる部分）をキャッシュ
-      - name: Cache Xcode Derived Data
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-xcode-deriveddata-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-xcode-deriveddata-
+          cache: "npm"
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -44,7 +26,19 @@ jobs:
         run: npm install
 
       - name: Prebuild (Convert to Native Project)
-        run: npx expo prebuild --platform ios --no-install # 自動連携を一旦ストップさせる
+        run: npx expo prebuild --platform ios --no-install
+
+      # 【重要】Pod キャッシュをクリア
+      - name: Clean Pods Cache
+        run: |
+          cd ios
+          rm -rf Pods
+          rm -rf Podfile.lock
+          cd ..
+
+      # 【重要】Xcode キャッシュをクリア
+      - name: Clean Xcode Derived Data
+        run: rm -rf ~/Library/Developer/Xcode/DerivedData/*
 
       - name: Install iOS Pods
         run: |
@@ -53,11 +47,9 @@ jobs:
 
       - name: Build Unsigned IPA with Xcode
         run: |
-          # ワークスペース名を取得
           PROJECT_NAME=$(ls ios | grep .xcworkspace | sed 's/\.xcworkspace//')
           echo "Found project: $PROJECT_NAME"
 
-          # 実機用(iphoneos)としてアーカイブ作成（署名なし）
           xcodebuild -workspace "./ios/$PROJECT_NAME.xcworkspace" \
             -scheme "$PROJECT_NAME" \
             -configuration Release \
@@ -68,7 +60,6 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
 
-          # Payloadフォルダを作ってIPA化
           mkdir Payload
           cp -r "./build/$PROJECT_NAME.xcarchive/Products/Applications/$PROJECT_NAME.app" ./Payload/
           zip -r DIRECTORY_NAME.ipa Payload
