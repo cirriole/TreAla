@@ -86,7 +86,8 @@ jobs:
             BUILD_LIBRARIES_FOR_DISTRIBUTION=YES \
             -allowProvisioningUpdates \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            SUPPORTS_MACCATALYST=NO
+            SUPPORTS_MACCATALYST=NO \
+            SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD=NO
 
           mkdir Payload
           cp -r "./build/$PROJECT_NAME.xcarchive/Products/Applications/$PROJECT_NAME.app" ./Payload/
