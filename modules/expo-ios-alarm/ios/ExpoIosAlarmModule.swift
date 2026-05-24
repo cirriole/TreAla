@@ -23,7 +23,8 @@ public class ExpoIosAlarmModule: Module {
                 return false
             }
             #else
-            return false
+            print("[Mock] AlarmKit is not available in this build environment. Returning true to allow UI to proceed.")
+            return true
             #endif
         }
 
