@@ -1,11 +1,8 @@
 import ExpoModulesCore
-#if canImport(AlarmKit)
 import AlarmKit
 import SwiftUI
 
-@available(iOS 26.0, *)
 struct AlarmData: AlarmMetadata {}
-#endif
 
 public class ExpoIosAlarmModule: Module {
     private var activeAlarmID: UUID?
@@ -14,27 +11,15 @@ public class ExpoIosAlarmModule: Module {
         Name("ExpoIosAlarm")
 
         AsyncFunction("requestAlarmPermission") { () -> Bool in
-            #if canImport(AlarmKit)
-            guard #available(iOS 26.0, *) else { return false }
             do {
                 _ = try await AlarmManager.shared.requestAuthorization()
                 return AlarmManager.shared.authorizationState == .authorized
             } catch {
                 return false
             }
-            #else
-            print("[Mock] AlarmKit is not available in this build environment. Returning true to allow UI to proceed.")
-            return true
-            #endif
         }
 
         AsyncFunction("triggerNativeAlarm") { (stationName: String) in
-            #if canImport(AlarmKit)
-            guard #available(iOS 26.0, *) else {
-                print("AlarmKit requires iOS 26.0 or newer.")
-                return
-            }
-            
             let id = UUID()
             self.activeAlarmID = id
             
@@ -68,14 +53,9 @@ public class ExpoIosAlarmModule: Module {
             } catch {
                 print("アラームのセットに失敗しました: \(error)")
             }
-            #else
-            print("AlarmKit is not available in this build environment.")
-            #endif
         }
 
         AsyncFunction("stopNativeAlarm") { () in
-            #if canImport(AlarmKit)
-            guard #available(iOS 26.0, *) else { return }
             if let id = self.activeAlarmID {
                 do {
                     try await AlarmManager.shared.removeAlarm(id: id)
@@ -85,9 +65,6 @@ public class ExpoIosAlarmModule: Module {
                     print("アラームの解除に失敗しました: \(error)")
                 }
             }
-            #else
-            print("AlarmKit is not available in this build environment.")
-            #endif
         }
     }
 }

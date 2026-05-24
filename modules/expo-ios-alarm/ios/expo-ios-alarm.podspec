@@ -5,7 +5,7 @@ Pod::Spec.new do |s|
   s.description    = 'Expo module for scheduling native alarms using Apple AlarmKit'
   s.author         = 'ui'
   s.homepage       = 'https://github.com/cirriole/TreAla'
-  s.platforms      = { :ios => '16.1' }
+  s.platforms      = { :ios => '26.0' }
   s.source         = { :git => '' }
   s.static_framework = true
 
