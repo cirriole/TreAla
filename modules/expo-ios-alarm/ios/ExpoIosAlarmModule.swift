@@ -1,9 +1,11 @@
 import ExpoModulesCore
+#if canImport(AlarmKit)
 import AlarmKit
-import SwiftUI // Color等を使用するため
+import SwiftUI
 
-// メタデータ用の構造体
+@available(iOS 26.0, *)
 struct AlarmData: AlarmMetadata {}
+#endif
 
 public class ExpoIosAlarmModule: Module {
     private var activeAlarmID: UUID?
@@ -11,38 +13,43 @@ public class ExpoIosAlarmModule: Module {
     public func definition() -> ModuleDefinition {
         Name("ExpoIosAlarm")
 
-        // 1. アクセス許可のリクエスト
         AsyncFunction("requestAlarmPermission") { () -> Bool in
+            #if canImport(AlarmKit)
+            guard #available(iOS 26.0, *) else { return false }
             do {
                 _ = try await AlarmManager.shared.requestAuthorization()
                 return AlarmManager.shared.authorizationState == .authorized
             } catch {
                 return false
             }
+            #else
+            return false
+            #endif
         }
 
-        // 2. カウントダウン型アラームのセット（即時発火用）
         AsyncFunction("triggerNativeAlarm") { (stationName: String) in
+            #if canImport(AlarmKit)
+            guard #available(iOS 26.0, *) else {
+                print("AlarmKit requires iOS 26.0 or newer.")
+                return
+            }
+            
             let id = UUID()
             self.activeAlarmID = id
             
-            // 1秒後に鳴らし、スヌーズは5分(300秒)に設定
             let duration = Alarm.CountdownDuration(preAlert: 1, postAlert: 300)
             
-            // 停止ボタンのカスタマイズ
             let stopButton = AlarmButton(
                 text: "停止",
                 textColor: .white,
                 systemImageName: "stop.circle"
             )
             
-            // アラート画面のテキスト設定
             let alertPresentation = AlarmPresentation.Alert(
                 title: "まもなく \(stationName) です！",
                 stopButton: stopButton
             )
             
-            // デザインの設定
             let attributes = AlarmAttributes<AlarmData>(
                 presentation: AlarmPresentation(alert: alertPresentation),
                 tintColor: .green
@@ -60,10 +67,14 @@ public class ExpoIosAlarmModule: Module {
             } catch {
                 print("アラームのセットに失敗しました: \(error)")
             }
+            #else
+            print("AlarmKit is not available in this build environment.")
+            #endif
         }
 
-        // 3. アラームの解除
         AsyncFunction("stopNativeAlarm") { () in
+            #if canImport(AlarmKit)
+            guard #available(iOS 26.0, *) else { return }
             if let id = self.activeAlarmID {
                 do {
                     try await AlarmManager.shared.removeAlarm(id: id)
@@ -73,6 +84,9 @@ public class ExpoIosAlarmModule: Module {
                     print("アラームの解除に失敗しました: \(error)")
                 }
             }
+            #else
+            print("AlarmKit is not available in this build environment.")
+            #endif
         }
     }
 }
