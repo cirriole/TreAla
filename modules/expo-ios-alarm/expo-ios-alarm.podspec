@@ -10,12 +10,15 @@ Pod::Spec.new do |s|
   s.license        = package['license'] || 'MIT'
   s.author         = package['author'] || 'Local User'
   s.homepage       = package['homepage'] || 'https://example.com'
-  s.platforms      = { :ios => '16.1' }
+  s.platforms      = { :ios => '17.1' }
   s.swift_version  = '5.4'
   s.source         = { git: '' }
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'
+
+  # AlarmKit フレームワーク
+  s.frameworks = 'AlarmKit'
 
   # Swift/Objective-C compatibility
   s.pod_target_xcconfig = {
