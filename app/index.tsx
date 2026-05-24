@@ -2,12 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
 import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import * as TaskManager from 'expo-task-manager';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
-import { requestAlarmPermission, startLiveActivity, stopLiveActivity, stopNativeAlarm, triggerNativeAlarm, updateLiveActivity } from '../modules/expo-ios-alarm';
 
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
 
@@ -20,7 +19,12 @@ type Station = {
   longitude: number;
 };
 
-// バックグラウンド位置情報タスク
+const RADIUS_OPTIONS = [
+  { label: '300m', value: 300 },
+  { label: '500m', value: 500 },
+  { label: '1km', value: 1000 },
+];
+
 TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
   if (error) {
     console.error(error);
@@ -38,7 +42,7 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
         if (targetStr && triggeredStr !== 'true') {
           const { station, radius } = JSON.parse(targetStr);
           
-          // Haversine formula で距離計算
+          // Haversine formula
           const R = 6371e3;
           const lat1 = location.coords.latitude;
           const lon1 = location.coords.longitude;
@@ -54,13 +58,10 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
           const dist = R * c;
 
-          // ライブアクティビティを更新
-          updateLiveActivity(dist);
-
-          // 到着：半径以内に到達
+          // 駅に到着
           if (dist <= radius) {
             await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
-            await triggerNativeAlarm(station.name);
+            // Haptics or Alarm trigger will go here when restored
           }
         }
       } catch(e) {
@@ -69,12 +70,6 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
     }
   }
 });
-
-const RADIUS_OPTIONS = [
-  { label: '300m', value: 300 },
-  { label: '500m', value: 500 },
-  { label: '1km', value: 1000 },
-];
 
 export default function Index() {
   const colorScheme = useColorScheme();
@@ -96,11 +91,10 @@ export default function Index() {
 
   const [targetStation, setTargetStation] = useState<Station | null>(null);
   const [radius, setRadius] = useState(500);
-  const [isAlarmActive, setIsAlarmActive] = useState(false);
+  const [isMonitoring, setIsMonitoring] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
   
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
-  const hasTriggeredAlarm = useRef<boolean>(false);
 
   // Load saved target station and favorites
   useEffect(() => {
@@ -162,7 +156,7 @@ export default function Index() {
   };
 
   const handleStationSelect = async (item: Station) => {
-    if (isAlarmActive) return;
+    if (isMonitoring) return;
     setTargetStation(item);
     await AsyncStorage.setItem('lastSelectedStation', JSON.stringify(item));
   };
@@ -192,29 +186,28 @@ export default function Index() {
       targetStation.longitude
     );
     setDistance(dist);
-    updateLiveActivity(dist);
 
     // 駅に到着
-    if (dist <= radius && !hasTriggeredAlarm.current) {
-      hasTriggeredAlarm.current = true;
-      await AsyncStorage.setItem('hasTriggeredAlarm', 'true');
-      
+    if (dist <= radius) {
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        await triggerNativeAlarm(targetStation.name);
       } catch (error) {
-        console.error("Failed to trigger alarm:", error);
+        console.error(error);
       }
     }
   };
 
-  const toggleAlarm = async () => {
-    if (isAlarmActive) {
-      // Stop alarm
-      setIsAlarmActive(false);
+  const toggleMonitoring = async () => {
+    if (isMonitoring) {
+      // Stop monitoring
+      setIsMonitoring(false);
       setDistance(null);
       if (locationSubscription.current) {
-        locationSubscription.current.remove();
+        try {
+          locationSubscription.current.remove();
+        } catch (e) {
+          console.log("Failed to remove location subscription safely:", e);
+        }
         locationSubscription.current = null;
       }
       try {
@@ -224,39 +217,23 @@ export default function Index() {
       }
       await AsyncStorage.removeItem('activeAlarmTarget');
       await AsyncStorage.setItem('hasTriggeredAlarm', 'false');
-      hasTriggeredAlarm.current = false;
-      stopNativeAlarm();
-      stopLiveActivity();
     } else {
       if (!targetStation) return;
 
-      // Start alarm
-      hasTriggeredAlarm.current = false;
       await AsyncStorage.setItem('hasTriggeredAlarm', 'false');
       await AsyncStorage.setItem('activeAlarmTarget', JSON.stringify({
         station: targetStation,
         radius: radius
       }));
-      
-      // Request AlarmKit permissions
-      try {
-        const hasPermission = await requestAlarmPermission();
-        if (!hasPermission) {
-          Alert.alert("エラー", "アラームの権限がありません！設定から許可してください。");
-          return;
-        }
-      } catch(error) {
-        Alert.alert("ネイティブエラー発生 (Permission)", String(error));
-      }
 
       const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
-      
+
       let bgStatus = 'undetermined';
       try {
         const res = await Location.requestBackgroundPermissionsAsync();
         bgStatus = res.status;
       } catch (e) {
-        console.warn("Background location permission is not available (e.g. in Expo Go). Falling back to foreground only.");
+        console.warn("Background location permission is not available (e.g. in Expo Go).");
       }
 
       if (fgStatus !== 'granted') {
@@ -264,26 +241,22 @@ export default function Index() {
         return;
       }
 
-      setIsAlarmActive(true);
-      
-      // Start location updates if background is available
+      setIsMonitoring(true);
+
       if (bgStatus === 'granted') {
         try {
           await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
             accuracy: Location.Accuracy.BestForNavigation,
             timeInterval: 1000,
             distanceInterval: 1,
-            showsBackgroundLocationIndicator: true, // Crucial for iOS background execution
+            showsBackgroundLocationIndicator: true,
           });
         } catch (e) {
           console.warn("Background location is not available.", e);
         }
       }
 
-      // Start Live Activity
-      startLiveActivity(targetStation.name);
-
-      // Start live watching for UI and Live Activity
+      // Start live watching for UI
       locationSubscription.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
@@ -334,12 +307,12 @@ export default function Index() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       
-      {!isAlarmActive ? (
+      {!isMonitoring ? (
         <>
           <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
             <View>
               <Text style={[styles.title, { color: theme.text }]}>トレアラ</Text>
-              <Text style={[styles.subtitle, { color: theme.secondaryText }]}>寝過ごし防止アラーム</Text>
+              <Text style={[styles.subtitle, { color: theme.secondaryText }]}>目的地までの距離測定</Text>
             </View>
             <Link href="/settings" asChild>
               <TouchableOpacity style={{ padding: 8 }}>
@@ -403,7 +376,7 @@ export default function Index() {
               )}
             </View>
 
-            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 24 }]}>アラーム判定半径</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 24 }]}>判定半径</Text>
             <View style={styles.segmentContainer}>
               {RADIUS_OPTIONS.map((opt) => (
                 <TouchableOpacity
@@ -434,15 +407,25 @@ export default function Index() {
                 styles.mainButton, 
                 { backgroundColor: targetStation ? theme.orange : theme.cardBorder }
               ]}
-              onPress={toggleAlarm}
+              onPress={toggleMonitoring}
               disabled={!targetStation}
             >
-              <Text style={styles.mainButtonText}>アラームをセット</Text>
+              <Text style={styles.mainButtonText}>モニタリングを開始</Text>
             </TouchableOpacity>
           </View>
         </>
       ) : (
         <>
+          {/* Debug Teleport Button */}
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 8, backgroundColor: 'rgba(150,150,150,0.2)', borderRadius: 8 }}
+            onPress={() => {
+              if (targetStation) handleLocationUpdate(targetStation.latitude, targetStation.longitude);
+            }}
+          >
+            <Text style={{ fontSize: 12, color: theme.text }}>[Test] ﾃﾚﾎﾟｰﾄ</Text>
+          </TouchableOpacity>
+
           <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
             <Ionicons name="radio" size={80} color={theme.orange} style={{ marginBottom: 24 }} />
             <Text style={{ fontSize: 20, color: theme.secondaryText, fontWeight: '600' }}>
@@ -461,7 +444,7 @@ export default function Index() {
                 {distance !== null ? `${Math.round(distance)}m` : '計測中...'}
               </Text>
               <Text style={{ fontSize: 14, color: theme.secondaryText }}>
-                半径 {radius}m 以内でアラームが鳴ります
+                半径 {radius}m 以内に到着したか判定します
               </Text>
             </View>
           </View>
@@ -469,9 +452,9 @@ export default function Index() {
           <View style={styles.footer}>
             <TouchableOpacity
               style={[styles.mainButton, { backgroundColor: '#FF3B30' }]}
-              onPress={toggleAlarm}
+              onPress={toggleMonitoring}
             >
-              <Text style={styles.mainButtonText}>アラームを停止</Text>
+              <Text style={styles.mainButtonText}>モニタリングを停止</Text>
             </TouchableOpacity>
           </View>
         </>
