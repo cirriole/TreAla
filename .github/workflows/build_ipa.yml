@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-16
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
@@ -67,7 +67,10 @@ jobs:
             archive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" \
+            SKIP_INSTALL=NO \
+            BUILD_LIBRARIES_FOR_DISTRIBUTION=YES \
+            -allowProvisioningUpdates
 
           mkdir Payload
           cp -r "./build/$PROJECT_NAME.xcarchive/Products/Applications/$PROJECT_NAME.app" ./Payload/
