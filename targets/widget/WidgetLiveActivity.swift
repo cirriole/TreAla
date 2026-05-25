@@ -6,7 +6,7 @@ import AlarmKit
 import UserNotifications
 
 @available(iOS 26.0, *)
-public struct AlarmData: AlarmMetadata {
+nonisolated public struct AlarmData: AlarmMetadata {
     public let alarmID: String
     public let stationName: String
     public init(alarmID: String, stationName: String) {
