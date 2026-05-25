@@ -53,8 +53,7 @@ public class ExpoIosAlarmModule: Module {
             
             let alarmConfiguration = AlarmConfiguration(
                 countdownDuration: duration,
-                attributes: attributes,
-                sound: silentSound
+                attributes: attributes
             )
             
             do {
