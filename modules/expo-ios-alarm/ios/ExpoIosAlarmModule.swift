@@ -3,8 +3,8 @@ import AlarmKit
 import SwiftUI
 import os
 import UserNotifications
-import AppIntents
 
+// アラームのメタデータ（Zenn記事の MyAlarmMetadata に相当）
 @available(iOS 26.0, *)
 public struct AlarmData: AlarmMetadata {
     public let alarmID: String
@@ -12,32 +12,6 @@ public struct AlarmData: AlarmMetadata {
     public init(alarmID: String, stationName: String) {
         self.alarmID = alarmID
         self.stationName = stationName
-    }
-}
-
-@available(iOS 26.0, *)
-public struct StopIntent: LiveActivityIntent {
-    public static var title: LocalizedStringResource = "Stop Alarm"
-    public static var description = IntentDescription("Stops the active alarm.")
-    public static var openAppWhenRun = false
-    
-    @Parameter(title: "alarmID")
-    public var alarmID: String
-    
-    public init(alarmID: String) {
-        self.alarmID = alarmID
-    }
-    
-    public init() {
-        self.alarmID = ""
-    }
-    
-    public func perform() async throws -> some IntentResult {
-        if let uuid = UUID(uuidString: alarmID) {
-            try? AlarmManager.shared.cancel(id: uuid)
-            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [alarmID + "_notification"])
-        }
-        return .result()
     }
 }
 
@@ -60,63 +34,54 @@ public class ExpoIosAlarmModule: Module {
         }
 
         AsyncFunction("triggerNativeAlarm") { (stationName: String) in
+            typealias AlarmConfiguration = AlarmManager.AlarmConfiguration<AlarmData>
+
             let id = UUID()
             self.activeAlarmID = id
-            
             let duration = Alarm.CountdownDuration(preAlert: 1, postAlert: 300)
             let customMetadata = AlarmData(alarmID: id.uuidString, stationName: stationName)
-            let secondaryIntent = StopIntent(alarmID: id.uuidString)
-            
+
+            // WWDC2025 Session 230 (5:43) のパターンに準拠
+            // 停止ボタン1つだけ
             let stopButton = AlarmButton(
-                text: "スライドで閉じる",
-                textColor: .white,
-                systemImageName: "xmark.circle"
-            )
-            
-            let customStopButton = AlarmButton(
                 text: "停止する",
                 textColor: .white,
-                systemImageName: "stop.circle.fill"
+                systemImageName: "stop.circle"
             )
-            
+
             let alertPresentation = AlarmPresentation.Alert(
-                title: "🔔 まもなく \(stationName) です！",
-                stopButton: stopButton,
-                secondaryButton: customStopButton,
-                secondaryButtonBehavior: .custom
+                title: "まもなく \(stationName) です",
+                stopButton: stopButton
             )
-            
+
             let attributes = AlarmAttributes<AlarmData>(
                 presentation: AlarmPresentation(alert: alertPresentation),
                 metadata: customMetadata,
                 tintColor: Color.orange
             )
-            
-            typealias AlarmConfiguration = AlarmManager.AlarmConfiguration<AlarmData>
-            let soundName = UNNotificationSoundName("silent.wav")
-            let silentSound = UNNotificationSound(named: soundName)
-            
+
             let alarmConfiguration = AlarmConfiguration(
                 countdownDuration: duration,
                 attributes: attributes,
-                secondaryIntent: secondaryIntent,
                 sound: .named("silent.wav")
             )
-            
+
             do {
                 try await AlarmManager.shared.schedule(id: id, configuration: alarmConfiguration)
                 self.logger.info("アラームをセットしました: \(stationName, privacy: .public)")
             } catch {
                 self.logger.error("アラームのセットに失敗しました: \(error.localizedDescription)")
             }
-            
+
             // フォアグラウンド向けのフォールバックとしてローカル通知も併用
+            let soundName = UNNotificationSoundName("silent.wav")
+            let silentSound = UNNotificationSound(named: soundName)
             let content = UNMutableNotificationContent()
             content.title = "まもなく \(stationName) です！"
             content.sound = silentSound
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
             let request = UNNotificationRequest(identifier: id.uuidString + "_notification", content: content, trigger: trigger)
-            
+
             do {
                 try await UNUserNotificationCenter.current().add(request)
                 self.logger.info("フォアグラウンド用通知をセットしました")
