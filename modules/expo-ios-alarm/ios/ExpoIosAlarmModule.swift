@@ -63,7 +63,7 @@ public class ExpoIosAlarmModule: Module {
         AsyncFunction("stopNativeAlarm") { () in
             if let id = self.activeAlarmID {
                 do {
-                    try await AlarmManager.shared.remove(id: id)
+                    try await AlarmManager.shared.delete(id: id)
                     self.activeAlarmID = nil
                     self.logger.info("アラームを解除しました")
                 } catch {
