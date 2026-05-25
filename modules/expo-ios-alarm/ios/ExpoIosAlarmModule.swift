@@ -63,12 +63,27 @@ public class ExpoIosAlarmModule: Module {
             } catch {
                 self.logger.error("アラームのセットに失敗しました: \(error.localizedDescription)")
             }
+            
+            // フォアグラウンド向けのフォールバックとしてローカル通知も併用
+            let content = UNMutableNotificationContent()
+            content.title = "まもなく \(stationName) です！"
+            content.sound = silentSound
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            let request = UNNotificationRequest(identifier: id.uuidString + "_notification", content: content, trigger: trigger)
+            
+            do {
+                try await UNUserNotificationCenter.current().add(request)
+                self.logger.info("フォアグラウンド用通知をセットしました")
+            } catch {
+                self.logger.error("フォアグラウンド用通知のセットに失敗しました: \(error.localizedDescription)")
+            }
         }
 
         AsyncFunction("stopNativeAlarm") { () in
             if let id = self.activeAlarmID {
                 do {
                     try await AlarmManager.shared.cancel(id: id)
+                    UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id.uuidString + "_notification"])
                     self.activeAlarmID = nil
                     self.logger.info("アラームを解除しました")
                 } catch {
