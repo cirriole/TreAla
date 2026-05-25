@@ -3,6 +3,7 @@ import AlarmKit
 import SwiftUI
 import os
 import UserNotifications
+import AppIntents
 
 // アラームのメタデータ（Zenn記事の MyAlarmMetadata に相当）
 @available(iOS 26.0, *)
@@ -12,6 +13,32 @@ nonisolated public struct AlarmData: AlarmMetadata {
     public init(alarmID: String, stationName: String) {
         self.alarmID = alarmID
         self.stationName = stationName
+    }
+}
+
+@available(iOS 26.0, *)
+public struct StopIntent: LiveActivityIntent {
+    public static var title: LocalizedStringResource = "Stop Alarm"
+    public static var description = IntentDescription("Stops the active alarm.")
+    public static var openAppWhenRun = false
+    
+    @Parameter(title: "alarmID")
+    public var alarmID: String
+    
+    public init(alarmID: String) {
+        self.alarmID = alarmID
+    }
+    
+    public init() {
+        self.alarmID = ""
+    }
+    
+    public func perform() async throws -> some IntentResult {
+        if let uuid = UUID(uuidString: alarmID) {
+            try? AlarmManager.shared.cancel(id: uuid)
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [alarmID + "_notification"])
+        }
+        return .result()
     }
 }
 
@@ -40,11 +67,19 @@ public class ExpoIosAlarmModule: Module {
             self.activeAlarmID = id
             let duration = Alarm.CountdownDuration(preAlert: 1, postAlert: 300)
             let customMetadata = AlarmData(alarmID: id.uuidString, stationName: stationName)
+            let secondaryIntent = StopIntent(alarmID: id.uuidString)
 
-            // WWDC2025 Session 230 (5:43) のパターンに準拠
-            // 停止ボタン1つだけ
+            let customStopButton = AlarmButton(
+                text: "停止する",
+                textColor: .white,
+                systemImageName: "stop.circle.fill"
+            )
+
+            // 最新の非推奨でない引数を使用 (stopButtonなし)
             let alertPresentation = AlarmPresentation.Alert(
-                title: "まもなく \(stationName) です"
+                title: "まもなく \(stationName) です",
+                secondaryButton: customStopButton,
+                secondaryButtonBehavior: .custom
             )
 
             let attributes = AlarmAttributes<AlarmData>(
@@ -56,6 +91,7 @@ public class ExpoIosAlarmModule: Module {
             let alarmConfiguration = AlarmConfiguration(
                 countdownDuration: duration,
                 attributes: attributes,
+                secondaryIntent: secondaryIntent,
                 sound: .named("silent.wav")
             )
 
