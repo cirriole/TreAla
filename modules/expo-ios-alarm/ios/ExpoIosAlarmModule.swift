@@ -32,19 +32,19 @@ public class ExpoIosAlarmModule: Module {
             let duration = Alarm.CountdownDuration(preAlert: 1, postAlert: 300)
             
             let stopButton = AlarmButton(
-                text: "停止",
+                text: "停止する",
                 textColor: .white,
-                systemImageName: "stop.circle"
+                systemImageName: "xmark.circle.fill"
             )
             
             let alertPresentation = AlarmPresentation.Alert(
-                title: "まもなく \(stationName) です！",
+                title: "🔔 まもなく \(stationName) です！",
                 stopButton: stopButton
             )
             
             let attributes = AlarmAttributes<AlarmData>(
                 presentation: AlarmPresentation(alert: alertPresentation),
-                tintColor: Color.green
+                tintColor: Color.orange
             )
             
             typealias AlarmConfiguration = AlarmManager.AlarmConfiguration<AlarmData>
