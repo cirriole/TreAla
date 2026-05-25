@@ -3,6 +3,7 @@ import WidgetKit
 import SwiftUI
 import AppIntents
 import AlarmKit
+import UserNotifications
 
 @available(iOS 26.0, *)
 public struct AlarmData: AlarmMetadata {
@@ -33,10 +34,9 @@ public struct StopIntent: LiveActivityIntent {
     
     public func perform() async throws -> some IntentResult {
         if let uuid = UUID(uuidString: alarmID) {
-            try? await AlarmManager.shared.cancel(id: uuid)
+            try? AlarmManager.shared.cancel(id: uuid)
             
             #if canImport(UserNotifications)
-            import UserNotifications
             UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [alarmID + "_notification"])
             #endif
         }

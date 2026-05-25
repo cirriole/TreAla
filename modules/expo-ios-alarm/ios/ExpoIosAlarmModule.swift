@@ -93,7 +93,7 @@ public class ExpoIosAlarmModule: Module {
         AsyncFunction("stopNativeAlarm") { () in
             if let id = self.activeAlarmID {
                 do {
-                    try await AlarmManager.shared.cancel(id: id)
+                    try AlarmManager.shared.cancel(id: id)
                     UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id.uuidString + "_notification"])
                     self.activeAlarmID = nil
                     self.logger.info("アラームを解除しました")
