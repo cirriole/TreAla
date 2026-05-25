@@ -107,7 +107,7 @@ struct WidgetLiveActivity: Widget {
                     .frame(maxWidth: .infinity)
                     .padding()
                     // インダストリアルな四角化
-                    .background(Color.orange)
+                    .background(Color(red: 0.33, green: 0.57, blue: 0.64))
                     .border(Color.black, width: 2)
                     .cornerRadius(0)
                 }

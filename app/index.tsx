@@ -86,15 +86,15 @@ export default function Index() {
   });
   
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = false; // 強制的にライトモード
 
   const theme = {
-    background: isDark ? '#000000' : '#F2F2F7',
-    text: isDark ? '#FFFFFF' : '#000000',
-    card: isDark ? '#1C1C1E' : '#FFFFFF',
-    cardBorder: isDark ? '#38383A' : '#E5E5EA',
-    orange: isDark ? '#FF9F0A' : '#FF9500',
-    secondaryText: isDark ? '#EBEBF599' : '#3C3C4399',
+    background: '#F2F2F7',
+    text: '#000000',
+    card: '#FFFFFF',
+    cardBorder: '#E5E5EA',
+    cyanBlue: '#5492A3', // くすんだシアンブルー
+    secondaryText: '#3C3C4399',
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -315,7 +315,7 @@ export default function Index() {
           styles.card,
           { 
             backgroundColor: theme.card, 
-            borderColor: isSelected ? theme.orange : theme.cardBorder,
+            borderColor: isSelected ? theme.cyanBlue : theme.cardBorder,
             borderWidth: isSelected ? 2 : 1
           }
         ]}
@@ -332,7 +332,7 @@ export default function Index() {
             </Text>
           </View>
           <TouchableOpacity onPress={() => toggleFavorite(item)} style={{ padding: 8 }}>
-            <Ionicons name={isFav ? "star" : "star-outline"} size={24} color={isFav ? theme.orange : theme.secondaryText} />
+            <Ionicons name={isFav ? "star" : "star-outline"} size={24} color={isFav ? theme.cyanBlue : theme.secondaryText} />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -356,7 +356,7 @@ export default function Index() {
                   }
                 >
                   <LinearGradient
-                    colors={['#FF9F0A', '#FF4500']}
+                    colors={['#5492A3', '#396B78']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
@@ -392,7 +392,7 @@ export default function Index() {
                 clearButtonMode="while-editing"
               />
               <TouchableOpacity
-                style={[styles.searchButton, { backgroundColor: theme.orange }]}
+                style={[styles.searchButton, { backgroundColor: theme.cyanBlue }]}
                 onPress={handleSearch}
               >
                 <Ionicons name="search" size={20} color="#FFFFFF" />
@@ -401,7 +401,7 @@ export default function Index() {
 
             <View style={styles.listContainer}>
               {isSearching ? (
-                <ActivityIndicator size="large" color={theme.orange} style={{ marginTop: 40 }} />
+                <ActivityIndicator size="large" color={theme.cyanBlue} style={{ marginTop: 40 }} />
               ) : searchQuery.length > 0 && searchResults.length > 0 ? (
                 <FlatList
                   data={searchResults}
@@ -440,7 +440,7 @@ export default function Index() {
                   style={[
                     styles.segmentButton,
                     { 
-                      backgroundColor: radius === opt.value ? theme.orange : theme.card,
+                      backgroundColor: radius === opt.value ? theme.cyanBlue : theme.card,
                       borderColor: theme.cardBorder
                     }
                   ]}
@@ -461,7 +461,7 @@ export default function Index() {
             <TouchableOpacity
               style={[
                 styles.mainButton, 
-                { backgroundColor: targetStation ? theme.orange : theme.cardBorder }
+                { backgroundColor: targetStation ? theme.cyanBlue : theme.cardBorder }
               ]}
               onPress={toggleMonitoring}
               disabled={!targetStation}
@@ -483,7 +483,7 @@ export default function Index() {
           </TouchableOpacity>
 
           <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
-            <Ionicons name="radio" size={80} color={theme.orange} style={{ marginBottom: 24 }} />
+            <Ionicons name="radio" size={80} color={theme.cyanBlue} style={{ marginBottom: 24 }} />
             <Text style={{ fontSize: 20, color: theme.secondaryText, fontWeight: '600' }}>
               アラーム待機中
             </Text>
@@ -496,7 +496,7 @@ export default function Index() {
             
             <View style={[styles.statusCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
               <Text style={{ fontSize: 16, color: theme.secondaryText }}>目的地まで あと</Text>
-              <Text style={{ fontSize: 64, fontWeight: '900', color: theme.orange, marginVertical: 8 }}>
+              <Text style={{ fontSize: 64, fontWeight: '900', color: theme.cyanBlue, marginVertical: 8 }}>
                 {distance !== null ? `${Math.round(distance)}m` : '計測中...'}
               </Text>
               <Text style={{ fontSize: 14, color: theme.secondaryText }}>

@@ -85,7 +85,7 @@ public class ExpoIosAlarmModule: Module {
             let attributes = AlarmAttributes<AlarmData>(
                 presentation: AlarmPresentation(alert: alertPresentation),
                 metadata: customMetadata,
-                tintColor: Color.orange
+                tintColor: Color(red: 0.33, green: 0.57, blue: 0.64)
             )
 
             let alarmConfiguration = AlarmConfiguration(
