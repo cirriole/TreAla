@@ -67,27 +67,8 @@ public class ExpoIosAlarmModule: Module {
             let customMetadata = AlarmData(alarmID: id.uuidString, stationName: stationName)
             let secondaryIntent = StopIntent(alarmID: id.uuidString)
             
-            let stopButton = AlarmButton(
-                text: "スライドで閉じる",
-                textColor: .white,
-                systemImageName: "xmark.circle"
-            )
-            
-            let customStopButton = AlarmButton(
-                text: "停止する",
-                textColor: .white,
-                systemImageName: "stop.circle.fill"
-            )
-            
-            let alertPresentation = AlarmPresentation.Alert(
-                title: "🔔 まもなく \(stationName) です！",
-                stopButton: stopButton,
-                secondaryButton: customStopButton,
-                secondaryButtonBehavior: .custom
-            )
-            
             let attributes = AlarmAttributes<AlarmData>(
-                presentation: AlarmPresentation(alert: alertPresentation),
+                presentation: AlarmPresentation(),
                 metadata: customMetadata,
                 tintColor: Color.orange
             )
