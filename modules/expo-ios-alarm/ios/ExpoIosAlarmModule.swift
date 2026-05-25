@@ -53,7 +53,8 @@ public class ExpoIosAlarmModule: Module {
             
             let alarmConfiguration = AlarmConfiguration(
                 countdownDuration: duration,
-                attributes: attributes
+                attributes: attributes,
+                sound: .named("silent.wav")
             )
             
             do {
