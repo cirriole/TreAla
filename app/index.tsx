@@ -7,6 +7,9 @@ import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import MaskedView from '@react-native-masked-view/masked-view';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFonts, DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
 
 import { requestAlarmPermission, triggerNativeAlarm, stopNativeAlarm } from '../modules/expo-ios-alarm';
 
@@ -78,6 +81,10 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
 });
 
 export default function Index() {
+  const [fontsLoaded] = useFonts({
+    DelaGothicOne_400Regular,
+  });
+  
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -340,7 +347,27 @@ export default function Index() {
         <>
           <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
             <View>
-              <Text style={[styles.title, { color: theme.text }]}>トレアラ</Text>
+              {fontsLoaded ? (
+                <MaskedView
+                  maskElement={
+                    <Text style={{ fontSize: 48, fontFamily: 'DelaGothicOne_400Regular', backgroundColor: 'transparent' }}>
+                      トレアラ
+                    </Text>
+                  }
+                >
+                  <LinearGradient
+                    colors={['#FF9F0A', '#FF4500']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={{ fontSize: 48, fontFamily: 'DelaGothicOne_400Regular', opacity: 0 }}>
+                      トレアラ
+                    </Text>
+                  </LinearGradient>
+                </MaskedView>
+              ) : (
+                <Text style={[styles.title, { color: theme.text, fontSize: 48 }]}>トレアラ</Text>
+              )}
               <Text style={[styles.subtitle, { color: theme.secondaryText }]}>目的地で純正アラーム起動</Text>
             </View>
             <Link href="/settings" asChild>
