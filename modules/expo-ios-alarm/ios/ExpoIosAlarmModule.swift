@@ -49,6 +49,7 @@ public class ExpoIosAlarmModule: Module {
             typealias AlarmConfiguration = AlarmManager.AlarmConfiguration<AlarmData>
             let alarmConfiguration = AlarmConfiguration(
                 countdownDuration: duration,
+                sound: nil,
                 attributes: attributes
             )
             
