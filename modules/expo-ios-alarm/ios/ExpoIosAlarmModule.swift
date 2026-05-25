@@ -1,11 +1,15 @@
 import ExpoModulesCore
 import AlarmKit
 import SwiftUI
+import os
 
+@available(iOS 26.0, *)
 struct AlarmData: AlarmMetadata {}
 
+@available(iOS 26.0, *)
 public class ExpoIosAlarmModule: Module {
     private var activeAlarmID: UUID?
+    private let logger = Logger(subsystem: "com.ui.applab.alarm", category: "AlarmKit")
 
     public func definition() -> ModuleDefinition {
         Name("ExpoIosAlarm")
@@ -15,6 +19,7 @@ public class ExpoIosAlarmModule: Module {
                 _ = try await AlarmManager.shared.requestAuthorization()
                 return AlarmManager.shared.authorizationState == .authorized
             } catch {
+                self.logger.error("Failed to request alarm authorization: \(error.localizedDescription)")
                 return false
             }
         }
@@ -49,9 +54,9 @@ public class ExpoIosAlarmModule: Module {
             
             do {
                 try await AlarmManager.shared.schedule(id: id, configuration: alarmConfiguration)
-                print("アラームをセットしました")
+                self.logger.info("アラームをセットしました: \(stationName, privacy: .public)")
             } catch {
-                print("アラームのセットに失敗しました: \(error)")
+                self.logger.error("アラームのセットに失敗しました: \(error.localizedDescription)")
             }
         }
 
@@ -60,9 +65,9 @@ public class ExpoIosAlarmModule: Module {
                 do {
                     try await AlarmManager.shared.remove(id: id)
                     self.activeAlarmID = nil
-                    print("アラームを解除しました")
+                    self.logger.info("アラームを解除しました")
                 } catch {
-                    print("アラームの解除に失敗しました: \(error)")
+                    self.logger.error("アラームの解除に失敗しました: \(error.localizedDescription)")
                 }
             }
         }

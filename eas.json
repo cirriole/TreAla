@@ -1,9 +1,14 @@
 {
   "build": {
     "preview": {
+      "distribution": "internal"
+    },
+    "production": {
       "ios": {
-        "simulator": true,
-        "distribution": "internal"
+        "buildConfiguration": "Release"
+      },
+      "env": {
+        "EXPO_IOS_DEPLOYMENT_TARGET": "26.0"
       }
     }
   }

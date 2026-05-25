@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-26
 
     steps:
       - name: Checkout repository
@@ -13,7 +13,7 @@ jobs:
       - name: Setup latest Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '26.0'
+          xcode-version: '26.3.0'
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -57,7 +57,7 @@ jobs:
       - name: Force Deployment Target
         run: |
           cd ios
-          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9\.]*;/IPHONEOS_DEPLOYMENT_TARGET = 18.0;/g' Pods/Pods.xcodeproj/project.pbxproj
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9\.]*;/IPHONEOS_DEPLOYMENT_TARGET = 26.0;/g' Pods/Pods.xcodeproj/project.pbxproj
 
       - name: Force iOS Target Only
         run: |
@@ -67,7 +67,7 @@ jobs:
         env:
           OS_VERSION: '15.7.7'
         run: |
-          export DEVELOPER_DIR=/Applications/Xcode_26.0.app/Contents/Developer
+          export DEVELOPER_DIR=/Applications/Xcode_26.3.app/Contents/Developer
           
           PROJECT_NAME=$(ls ios | grep .xcworkspace | sed 's/\.xcworkspace//')
           echo "Found project: $PROJECT_NAME"
