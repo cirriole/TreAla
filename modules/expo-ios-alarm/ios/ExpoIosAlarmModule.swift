@@ -43,15 +43,8 @@ public class ExpoIosAlarmModule: Module {
 
             // WWDC2025 Session 230 (5:43) のパターンに準拠
             // 停止ボタン1つだけ
-            let stopButton = AlarmButton(
-                text: "停止する",
-                textColor: .white,
-                systemImageName: "stop.circle"
-            )
-
             let alertPresentation = AlarmPresentation.Alert(
-                title: "まもなく \(stationName) です",
-                stopButton: stopButton
+                title: "まもなく \(stationName) です"
             )
 
             let attributes = AlarmAttributes<AlarmData>(
