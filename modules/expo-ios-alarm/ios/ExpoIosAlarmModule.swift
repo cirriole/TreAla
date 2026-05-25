@@ -41,8 +41,7 @@ public class ExpoIosAlarmModule: Module {
             let stopButton = AlarmButton(
                 text: "停止する",
                 textColor: .white,
-                systemImageName: "xmark.circle.fill",
-                displayStyle: .button
+                systemImageName: "xmark.circle.fill"
             )
             
             let alertPresentation = AlarmPresentation.Alert(
