@@ -15,4 +15,5 @@ Pod::Spec.new do |s|
   # Swift's #if canImport and @available will handle auto-linking.
 
   s.source_files = '**/*.{h,m,swift}'
+  s.resources = '**/*.{wav}'
 end

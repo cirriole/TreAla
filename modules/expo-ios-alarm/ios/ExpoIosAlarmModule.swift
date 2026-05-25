@@ -2,6 +2,7 @@ import ExpoModulesCore
 import AlarmKit
 import SwiftUI
 import os
+import UserNotifications
 
 @available(iOS 26.0, *)
 struct AlarmData: AlarmMetadata {}
@@ -47,9 +48,13 @@ public class ExpoIosAlarmModule: Module {
             )
             
             typealias AlarmConfiguration = AlarmManager.AlarmConfiguration<AlarmData>
+            let soundName = UNNotificationSoundName("silent.wav")
+            let silentSound = UNNotificationSound(named: soundName)
+            
             let alarmConfiguration = AlarmConfiguration(
                 countdownDuration: duration,
-                attributes: attributes
+                attributes: attributes,
+                sound: silentSound
             )
             
             do {
