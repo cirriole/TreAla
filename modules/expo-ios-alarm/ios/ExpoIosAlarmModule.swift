@@ -5,7 +5,14 @@ import os
 import UserNotifications
 
 @available(iOS 26.0, *)
-struct AlarmData: AlarmMetadata {}
+public struct AlarmData: AlarmMetadata {
+    public let alarmID: String
+    public let stationName: String
+    public init(alarmID: String, stationName: String) {
+        self.alarmID = alarmID
+        self.stationName = stationName
+    }
+}
 
 @available(iOS 26.0, *)
 public class ExpoIosAlarmModule: Module {
@@ -43,8 +50,11 @@ public class ExpoIosAlarmModule: Module {
                 stopButton: stopButton
             )
             
+            let customMetadata = AlarmData(alarmID: id.uuidString, stationName: stationName)
+            
             let attributes = AlarmAttributes<AlarmData>(
                 presentation: AlarmPresentation(alert: alertPresentation),
+                metadata: customMetadata,
                 tintColor: Color.orange
             )
             
