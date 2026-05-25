@@ -13,7 +13,7 @@ export default function SettingsScreen() {
     text: isDark ? '#FFFFFF' : '#000000',
     cardBackground: isDark ? '#1C1C1E' : '#FFFFFF',
     border: isDark ? '#38383A' : '#E5E5EA',
-    tint: isDark ? '#FF9F0A' : '#FF9500',
+    tint: '#5492A3',
     textSecondary: isDark ? '#EBEBF599' : '#3C3C4399',
   };
 

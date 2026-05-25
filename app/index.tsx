@@ -6,12 +6,13 @@ import * as TaskManager from 'expo-task-manager';
 import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
 
 import { requestAlarmPermission, triggerNativeAlarm, stopNativeAlarm } from '../modules/expo-ios-alarm';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
 
@@ -86,15 +87,15 @@ export default function Index() {
   });
   
   const colorScheme = useColorScheme();
-  const isDark = false; // 強制的にライトモード
+  const isDark = colorScheme === 'dark';
 
   const theme = {
-    background: '#F2F2F7',
-    text: '#000000',
-    card: '#FFFFFF',
-    cardBorder: '#E5E5EA',
+    background: isDark ? '#000000' : '#F2F2F7',
+    text: isDark ? '#FFFFFF' : '#000000',
+    card: isDark ? '#1C1C1E' : '#FFFFFF',
+    cardBorder: isDark ? '#38383A' : '#E5E5EA',
     cyanBlue: '#5492A3', // くすんだシアンブルー
-    secondaryText: '#3C3C4399',
+    secondaryText: isDark ? '#EBEBF599' : '#3C3C4399',
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,7 +110,7 @@ export default function Index() {
   
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
 
-  // Load saved target station and favorites
+  // Load saved target station, radius and favorites
   useEffect(() => {
     AsyncStorage.getItem('favoriteStations_v2').then(data => {
       if (data) {
@@ -120,6 +121,11 @@ export default function Index() {
     AsyncStorage.getItem('lastSelectedStation').then(data => {
       if (data) {
         setTargetStation(JSON.parse(data));
+      }
+    });
+    AsyncStorage.getItem('savedRadius').then(data => {
+      if (data) {
+        setRadius(parseInt(data, 10));
       }
     });
   }, []);
@@ -444,7 +450,10 @@ export default function Index() {
                       borderColor: theme.cardBorder
                     }
                   ]}
-                  onPress={() => setRadius(opt.value)}
+                  onPress={() => {
+                    setRadius(opt.value);
+                    AsyncStorage.setItem('savedRadius', opt.value.toString());
+                  }}
                 >
                   <Text style={{ 
                     color: radius === opt.value ? '#FFFFFF' : theme.text,
