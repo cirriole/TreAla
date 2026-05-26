@@ -10,6 +10,7 @@ import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, Tex
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
+import Slider from '@react-native-community/slider';
 
 import { requestAlarmPermission, triggerNativeAlarm, stopNativeAlarm } from '../modules/expo-ios-alarm';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -25,11 +26,7 @@ type Station = {
   longitude: number;
 };
 
-const RADIUS_OPTIONS = [
-  { label: '300m', value: 300 },
-  { label: '500m', value: 500 },
-  { label: '1km', value: 1000 },
-];
+
 
 TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
   if (error) {
@@ -438,31 +435,32 @@ export default function Index() {
               )}
             </View>
 
-            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 24 }]}>判定半径</Text>
-            <View style={styles.segmentContainer}>
-              {RADIUS_OPTIONS.map((opt) => (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[
-                    styles.segmentButton,
-                    { 
-                      backgroundColor: radius === opt.value ? theme.cyanBlue : theme.card,
-                      borderColor: theme.cardBorder
-                    }
-                  ]}
-                  onPress={() => {
-                    setRadius(opt.value);
-                    AsyncStorage.setItem('savedRadius', opt.value.toString());
-                  }}
-                >
-                  <Text style={{ 
-                    color: radius === opt.value ? '#FFFFFF' : theme.text,
-                    fontWeight: radius === opt.value ? 'bold' : 'normal'
-                  }}>
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 24, marginBottom: 0 }]}>判定半径</Text>
+              <Text style={{ color: theme.cyanBlue, fontSize: 18, fontWeight: 'bold', marginTop: 24 }}>
+                {radius >= 1000 ? `${(radius / 1000).toFixed(1)}km` : `${radius}m`}
+              </Text>
+            </View>
+            <View style={{ marginVertical: 16 }}>
+              <Slider
+                style={{ width: '100%', height: 40 }}
+                minimumValue={100}
+                maximumValue={3000}
+                step={100}
+                value={radius}
+                onValueChange={(val) => setRadius(val)}
+                onSlidingComplete={(val) => {
+                  setRadius(val);
+                  AsyncStorage.setItem('savedRadius', val.toString());
+                }}
+                minimumTrackTintColor={theme.cyanBlue}
+                maximumTrackTintColor={theme.cardBorder}
+                thumbTintColor={theme.cyanBlue}
+              />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 }}>
+                <Text style={{ fontSize: 12, color: theme.secondaryText }}>100m</Text>
+                <Text style={{ fontSize: 12, color: theme.secondaryText }}>3km</Text>
+              </View>
             </View>
           </View>
 
