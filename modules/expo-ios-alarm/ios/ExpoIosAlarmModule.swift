@@ -6,7 +6,7 @@ import UserNotifications
 import AppIntents
 
 // アラームのメタデータ（Zenn記事の MyAlarmMetadata に相当）
-@available(iOS 26.0, *)
+@available(iOS 26.1, *)
 nonisolated public struct AlarmData: AlarmMetadata {
     public let alarmID: String
     public let stationName: String
@@ -16,7 +16,7 @@ nonisolated public struct AlarmData: AlarmMetadata {
     }
 }
 
-@available(iOS 26.0, *)
+@available(iOS 26.1, *)
 public struct StopIntent: LiveActivityIntent {
     public static var title: LocalizedStringResource = "Stop Alarm"
     public static var description = IntentDescription("Stops the active alarm.")
@@ -42,7 +42,7 @@ public struct StopIntent: LiveActivityIntent {
     }
 }
 
-@available(iOS 26.0, *)
+@available(iOS 26.1, *)
 public class ExpoIosAlarmModule: Module {
     private var activeAlarmID: UUID?
     private let logger = Logger(subsystem: "com.ui.applab.alarm", category: "AlarmKit")

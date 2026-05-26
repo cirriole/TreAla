@@ -5,7 +5,7 @@ import AppIntents
 import AlarmKit
 import UserNotifications
 
-@available(iOS 26.0, *)
+@available(iOS 26.1, *)
 nonisolated public struct AlarmData: AlarmMetadata {
     public let alarmID: String
     public let stationName: String
@@ -15,7 +15,7 @@ nonisolated public struct AlarmData: AlarmMetadata {
     }
 }
 
-@available(iOS 26.0, *)
+@available(iOS 26.1, *)
 public struct StopIntent: LiveActivityIntent {
     public static var title: LocalizedStringResource = "Stop Alarm"
     public static var description = IntentDescription("Stops the active alarm.")
@@ -44,7 +44,7 @@ public struct StopIntent: LiveActivityIntent {
     }
 }
 
-@available(iOS 26.0, *)
+@available(iOS 26.1, *)
 struct WidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: AlarmAttributes<AlarmData>.self) { context in
