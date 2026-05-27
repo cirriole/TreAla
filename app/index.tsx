@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, DotGothic16_400Regular } from '@expo-google-fonts/dotgothic16';
 import { DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
 import Slider from '@react-native-community/slider';
+import stationData from '../assets/data/stations.json';
 
 import { requestAlarmPermission, triggerNativeAlarm, stopNativeAlarm } from '../modules/expo-ios-alarm';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -145,36 +146,29 @@ export default function Index() {
     });
   }, []);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
+  useEffect(() => {
+    const keyword = searchQuery.trim().replace(/駅$/, '');
+    if (!keyword) {
       setSearchResults([]);
       return;
     }
-    setIsSearching(true);
-    const keyword = searchQuery.trim().replace(/駅$/, '');
-    try {
-      const res = await fetch(`https://express.heartrails.com/api/json?method=getStations&name=${encodeURIComponent(keyword)}`);
-      const data = await res.json();
-      if (data.response && data.response.station) {
-        const stations: Station[] = data.response.station.map((s: any) => ({
-          id: `${s.name}-${s.line}-${s.prefecture}`,
-          name: s.name,
-          line: s.line,
-          prefecture: s.prefecture,
-          latitude: s.y,
-          longitude: s.x,
-        }));
-        setSearchResults(stations);
-      } else {
-        setSearchResults([]);
-        Alert.alert("検索結果", "駅が見つかりませんでした。正式名称を入力してください（例：新宿）");
-      }
-    } catch {
-      Alert.alert("エラー", "検索に失敗しました");
-    } finally {
-      setIsSearching(false);
-    }
-  };
+    
+    // Autocomplete filter
+    const results = (stationData as any[]).filter(s => 
+      s.name.includes(keyword) || s.kana.includes(keyword)
+    ).slice(0, 15);
+    
+    const formatted: Station[] = results.map(s => ({
+      id: s.id,
+      name: s.name,
+      line: '主要駅', 
+      prefecture: s.prefecture,
+      latitude: s.latitude,
+      longitude: s.longitude,
+    }));
+    
+    setSearchResults(formatted);
+  }, [searchQuery]);
 
   const toggleFavorite = async (station: Station) => {
     const isFav = favorites.some(f => f.id === station.id);
@@ -403,26 +397,16 @@ export default function Index() {
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
               <TextInput
                 style={[styles.searchInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.cardBorder }]}
-                placeholder="駅名を検索（例：品川）"
+                placeholder="駅名を検索（例：品川 / しながわ）"
                 placeholderTextColor={theme.secondaryText}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                onSubmitEditing={handleSearch}
-                returnKeyType="search"
                 clearButtonMode="while-editing"
               />
-              <TouchableOpacity
-                style={[styles.searchButton, { backgroundColor: theme.cyanBlue }]}
-                onPress={handleSearch}
-              >
-                <Ionicons name="search" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
             </View>
 
             <View style={styles.listContainer}>
-              {isSearching ? (
-                <ActivityIndicator size="large" color={theme.cyanBlue} style={{ marginTop: 40 }} />
-              ) : searchQuery.length > 0 && searchResults.length > 0 ? (
+              {searchQuery.length > 0 && searchResults.length > 0 ? (
                 <FlatList
                   data={searchResults}
                   keyExtractor={(item) => item.id}
