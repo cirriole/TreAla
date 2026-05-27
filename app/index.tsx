@@ -120,6 +120,10 @@ export default function Index() {
   const [distance, setDistance] = useState<number | null>(null);
   
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+  
+  // Secret command state
+  const secretTapCount = useRef(0);
+  const secretTapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load saved target station, radius and favorites
   useEffect(() => {
@@ -492,15 +496,30 @@ export default function Index() {
         </>
       ) : (
         <>
-          {/* Debug Teleport Button */}
+          {/* Secret Teleport Trigger */}
           <TouchableOpacity
-            style={{ position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 8, backgroundColor: 'rgba(150,150,150,0.2)', borderRadius: 8 }}
+            style={{ position: 'absolute', top: 40, left: 16, width: 60, height: 60, zIndex: 10 }}
+            activeOpacity={1}
             onPress={() => {
-              if (targetStation) handleLocationUpdate(targetStation.latitude, targetStation.longitude);
+              if (!targetStation) return;
+              secretTapCount.current += 1;
+              if (secretTapTimeout.current) clearTimeout(secretTapTimeout.current);
+              
+              if (secretTapCount.current >= 10) {
+                secretTapCount.current = 0;
+                Alert.alert("裏コマンド発動", "目的地にテレポートします", [
+                  { 
+                    text: "OK", 
+                    onPress: () => handleLocationUpdate(targetStation.latitude, targetStation.longitude) 
+                  }
+                ]);
+              } else {
+                secretTapTimeout.current = setTimeout(() => {
+                  secretTapCount.current = 0;
+                }, 1000);
+              }
             }}
-          >
-            <Text style={{ fontSize: 12, color: theme.text }}>[Test] ﾃﾚﾎﾟｰﾄ</Text>
-          </TouchableOpacity>
+          />
 
           <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
             <Ionicons name="radio" size={80} color={theme.cyanBlue} style={{ marginBottom: 24 }} />
