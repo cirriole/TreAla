@@ -478,6 +478,9 @@ export default function Index() {
                 <Text style={{ fontSize: 12, color: theme.secondaryText }}>100m</Text>
                 <Text style={{ fontSize: 12, color: theme.secondaryText }}>3km</Text>
               </View>
+              <Text style={{ fontSize: 11, color: theme.secondaryText, marginTop: 12, paddingHorizontal: 4, lineHeight: 16 }}>
+                ※地下鉄などでは位置情報が取得できずアラームが発動しないことがあります。(β)
+              </Text>
             </View>
           </View>
 
