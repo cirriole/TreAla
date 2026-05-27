@@ -9,7 +9,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts, DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
+import { useFonts, DotGothic16_400Regular } from '@expo-google-fonts/dotgothic16';
 import Slider from '@react-native-community/slider';
 
 import { requestAlarmPermission, triggerNativeAlarm, stopNativeAlarm } from '../modules/expo-ios-alarm';
@@ -80,7 +80,7 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
 
 export default function Index() {
   const [fontsLoaded] = useFonts({
-    DelaGothicOne_400Regular,
+    DotGothic16_400Regular,
   });
   
   const colorScheme = useColorScheme();
@@ -353,7 +353,7 @@ export default function Index() {
               {fontsLoaded ? (
                 <MaskedView
                   maskElement={
-                    <Text style={{ fontSize: 48, fontFamily: 'DelaGothicOne_400Regular', backgroundColor: 'transparent' }}>
+                    <Text style={{ fontSize: 48, fontFamily: 'DotGothic16_400Regular', backgroundColor: 'transparent' }}>
                       トレアラ
                     </Text>
                   }
@@ -363,7 +363,7 @@ export default function Index() {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
-                    <Text style={{ fontSize: 48, fontFamily: 'DelaGothicOne_400Regular', opacity: 0 }}>
+                    <Text style={{ fontSize: 48, fontFamily: 'DotGothic16_400Regular', opacity: 0 }}>
                       トレアラ
                     </Text>
                   </LinearGradient>
