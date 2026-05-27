@@ -62,7 +62,7 @@ export default function SettingsScreen() {
         <Text style={[styles.sectionTitle, { color: theme.text }]}>アプリ情報</Text>
         <View style={styles.infoRow}>
           <Text style={[styles.infoLabel, { color: theme.text }]}>バージョン</Text>
-          <Text style={[styles.infoValue, { color: theme.textSecondary }]}>{appVersion}(Beta)</Text>
+          <Text style={[styles.infoValue, { color: theme.textSecondary }]}>1.0 (Beta)</Text>
         </View>
       </View>
 
