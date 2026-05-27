@@ -375,7 +375,7 @@ export default function Index() {
             </View>
             <Link href="/settings" asChild>
               <TouchableOpacity style={{ padding: 8 }}>
-                <Ionicons name="settings-outline" size={28} color={theme.text} />
+                <Ionicons name="menu" size={32} color={theme.text} />
               </TouchableOpacity>
             </Link>
           </View>
