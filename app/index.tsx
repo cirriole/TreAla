@@ -91,7 +91,7 @@ export default function Index() {
     text: isDark ? '#FFFFFF' : '#000000',
     card: isDark ? '#1C1C1E' : '#FFFFFF',
     cardBorder: isDark ? '#38383A' : '#E5E5EA',
-    cyanBlue: '#5492A3', // くすんだシアンブルー
+    cyanBlue: '#6BC0D5', // 明るいシアンブルー
     secondaryText: isDark ? '#EBEBF599' : '#3C3C4399',
   };
 
@@ -359,7 +359,7 @@ export default function Index() {
                   }
                 >
                   <LinearGradient
-                    colors={['#5492A3', '#396B78']}
+                    colors={['#6BC0D5', '#4AA5BD']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
