@@ -9,8 +9,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFonts, DotGothic16_400Regular } from '@expo-google-fonts/dotgothic16';
 import { DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
 import Slider from '@react-native-community/slider';
+import stationData from '../assets/data/stations.json';
 
 import { requestAlarmPermission, triggerNativeAlarm, stopNativeAlarm } from '../modules/expo-ios-alarm';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -145,51 +147,27 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    const keyword = searchQuery.trim();
+    const keyword = searchQuery.trim().replace(/駅$/, '');
     if (!keyword) {
       setSearchResults([]);
-      setIsSearching(false);
       return;
     }
-
-    const apiKey = process.env.EXPO_PUBLIC_YAHOO_CLIENT_ID;
-    if (!apiKey) {
-      Alert.alert('エラー', 'Yahoo APIキー（Client ID）が設定されていません。.env ファイルを確認してください。');
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    const delayDebounceFn = setTimeout(async () => {
-      try {
-        const query = keyword.replace(/駅$/, '');
-        const res = await fetch(`https://map.yahooapis.jp/search/local/V1/localSearch?appid=${apiKey}&query=${encodeURIComponent(query)}&gc=0306&output=json&results=15`);
-        const data = await res.json();
-        
-        if (data.Feature && data.Feature.length > 0) {
-          const formatted: Station[] = data.Feature.map((f: any) => {
-            const coords = f.Geometry.Coordinates.split(',');
-            return {
-              id: f.Id,
-              name: f.Name.replace(/駅$/, ''),
-              line: f.Property.Address || '日本',
-              prefecture: f.Property.Address ? f.Property.Address.substring(0, 4).replace(/[市区町村].*/, '') : '',
-              latitude: parseFloat(coords[1]),
-              longitude: parseFloat(coords[0]),
-            };
-          });
-          setSearchResults(formatted);
-        } else {
-          setSearchResults([]);
-        }
-      } catch (err) {
-        console.error('Yahoo API Error:', err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
+    
+    // Autocomplete filter
+    const results = (stationData as any[]).filter(s => 
+      s.name.includes(keyword) || s.kana.includes(keyword)
+    ).slice(0, 15);
+    
+    const formatted: Station[] = results.map(s => ({
+      id: s.id,
+      name: s.name,
+      line: '主要駅', 
+      prefecture: s.prefecture,
+      latitude: s.latitude,
+      longitude: s.longitude,
+    }));
+    
+    setSearchResults(formatted);
   }, [searchQuery]);
 
   const toggleFavorite = async (station: Station) => {
@@ -428,9 +406,7 @@ export default function Index() {
             </View>
 
             <View style={styles.listContainer}>
-              {isSearching ? (
-                <ActivityIndicator size="large" color={theme.cyanBlue} style={{ marginTop: 40 }} />
-              ) : searchQuery.length > 0 && searchResults.length > 0 ? (
+              {searchQuery.length > 0 && searchResults.length > 0 ? (
                 <FlatList
                   data={searchResults}
                   keyExtractor={(item) => item.id}
