@@ -371,7 +371,6 @@ export default function Index() {
               ) : (
                 <Text style={[styles.title, { color: theme.text, fontSize: 48 }]}>トレアラ</Text>
               )}
-              <Text style={[styles.subtitle, { color: theme.secondaryText }]}>目的地で純正アラーム起動</Text>
             </View>
             <Link href="/settings" asChild>
               <TouchableOpacity style={{ padding: 8 }}>

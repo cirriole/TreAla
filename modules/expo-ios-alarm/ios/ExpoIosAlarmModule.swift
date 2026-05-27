@@ -67,19 +67,8 @@ public class ExpoIosAlarmModule: Module {
             self.activeAlarmID = id
             let duration = Alarm.CountdownDuration(preAlert: 1, postAlert: 300)
             let customMetadata = AlarmData(alarmID: id.uuidString, stationName: stationName)
-            let secondaryIntent = StopIntent(alarmID: id.uuidString)
-
-            let customStopButton = AlarmButton(
-                text: "停止する",
-                textColor: .white,
-                systemImageName: "stop.circle.fill"
-            )
-
-            // 最新の非推奨でない引数を使用 (stopButtonなし)
             let alertPresentation = AlarmPresentation.Alert(
-                title: "まもなく \(stationName) です",
-                secondaryButton: customStopButton,
-                secondaryButtonBehavior: .custom
+                title: "まもなく \(stationName) です"
             )
 
             let attributes = AlarmAttributes<AlarmData>(
@@ -91,7 +80,6 @@ public class ExpoIosAlarmModule: Module {
             let alarmConfiguration = AlarmConfiguration(
                 countdownDuration: duration,
                 attributes: attributes,
-                secondaryIntent: secondaryIntent,
                 sound: .named("silent.wav")
             )
 
