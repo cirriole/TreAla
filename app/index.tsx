@@ -343,7 +343,7 @@ export default function Index() {
               {item.name}
             </Text>
             <Text style={{ fontSize: 12, color: theme.secondaryText, marginTop: 4 }}>
-              {item.line} ({item.prefecture})
+              {item.prefecture}
             </Text>
           </View>
           <TouchableOpacity onPress={() => toggleFavorite(item)} style={{ padding: 8 }}>
@@ -362,27 +362,23 @@ export default function Index() {
         <>
           <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
             <View>
-              {fontsLoaded ? (
-                <MaskedView
-                  maskElement={
-                    <Text style={{ fontSize: 48, fontFamily: 'DelaGothicOne_400Regular', backgroundColor: 'transparent' }}>
-                      トレアラ
-                    </Text>
-                  }
+              <MaskedView
+                maskElement={
+                  <Text style={{ fontSize: 48, fontWeight: '900', fontFamily: fontsLoaded ? 'DelaGothicOne_400Regular' : undefined, backgroundColor: 'transparent' }}>
+                    トレアラ
+                  </Text>
+                }
+              >
+                <LinearGradient
+                  colors={['#6BC0D5', '#2A85A0']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                 >
-                  <LinearGradient
-                    colors={['#6BC0D5', '#4AA5BD']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <Text style={{ fontSize: 48, fontFamily: 'DelaGothicOne_400Regular', opacity: 0 }}>
-                      トレアラ
-                    </Text>
-                  </LinearGradient>
-                </MaskedView>
-              ) : (
-                <Text style={[styles.title, { color: theme.text, fontSize: 48, fontWeight: '900' }]}>トレアラ</Text>
-              )}
+                  <Text style={{ fontSize: 48, fontWeight: '900', fontFamily: fontsLoaded ? 'DelaGothicOne_400Regular' : undefined, opacity: 0 }}>
+                    トレアラ
+                  </Text>
+                </LinearGradient>
+              </MaskedView>
             </View>
             <Link href="/settings" asChild>
               <TouchableOpacity style={{ padding: 8 }}>
@@ -463,7 +459,7 @@ export default function Index() {
                 <Text style={{ fontSize: 12, color: theme.secondaryText }}>3km</Text>
               </View>
               <Text style={{ fontSize: 11, color: theme.secondaryText, marginTop: 12, paddingHorizontal: 4, lineHeight: 16 }}>
-                ※地下鉄などでは位置情報が取得できずアラームが発動しないことがあります。(β)
+                地下鉄などでは位置情報が取得できずアラームが発動しないことがあります。(β)
               </Text>
             </View>
           </View>
