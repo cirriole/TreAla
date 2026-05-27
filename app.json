@@ -1,20 +1,20 @@
 {
   "expo": {
-    "name": "Alarm",
-    "slug": "Alarm",
+    "name": "TreAla",
+    "slug": "TreAla",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "alarm",
+    "scheme": "treala",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "appleTeamId": "A1B2C3D4E5",
-      "bundleIdentifier": "com.ui.applab.alarm",
+      "bundleIdentifier": "com.ui.applab.treala",
       "supportsTablet": true,
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.com.ui.applab.alarm"
+          "group.com.ui.applab.treala"
         ]
       },
       "infoPlist": {
@@ -35,7 +35,7 @@
       }
     },
     "android": {
-      "package": "com.ui.applab.alarm",
+      "package": "com.ui.applab.treala",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
