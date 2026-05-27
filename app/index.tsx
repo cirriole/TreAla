@@ -83,9 +83,9 @@ const SquareHamburgerIcon = ({ color }: { color: string }) => {
   return (
     <View style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
       <View style={{ width: 26, height: 18, justifyContent: 'space-between' }}>
-        <View style={{ width: '100%', height: 3, backgroundColor: color }} />
-        <View style={{ width: '100%', height: 3, backgroundColor: color }} />
-        <View style={{ width: '100%', height: 3, backgroundColor: color }} />
+        <View style={{ width: '100%', height: 3, backgroundColor: color, borderRadius: 1 }} />
+        <View style={{ width: '100%', height: 3, backgroundColor: color, borderRadius: 1 }} />
+        <View style={{ width: '100%', height: 3, backgroundColor: color, borderRadius: 1 }} />
       </View>
     </View>
   );
