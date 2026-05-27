@@ -10,6 +10,7 @@ import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, Tex
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, DotGothic16_400Regular } from '@expo-google-fonts/dotgothic16';
+import { DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
 import Slider from '@react-native-community/slider';
 
 import { requestAlarmPermission, triggerNativeAlarm, stopNativeAlarm } from '../modules/expo-ios-alarm';
@@ -78,9 +79,22 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
   }
 });
 
+const SquareHamburgerIcon = ({ color }: { color: string }) => {
+  return (
+    <View style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ width: 26, height: 18, justifyContent: 'space-between' }}>
+        <View style={{ width: '100%', height: 3, backgroundColor: color }} />
+        <View style={{ width: '100%', height: 3, backgroundColor: color }} />
+        <View style={{ width: '100%', height: 3, backgroundColor: color }} />
+      </View>
+    </View>
+  );
+};
+
 export default function Index() {
   const [fontsLoaded] = useFonts({
     DotGothic16_400Regular,
+    DelaGothicOne_400Regular,
   });
   
   const colorScheme = useColorScheme();
@@ -353,7 +367,7 @@ export default function Index() {
               {fontsLoaded ? (
                 <MaskedView
                   maskElement={
-                    <Text style={{ fontSize: 48, fontFamily: 'DotGothic16_400Regular', backgroundColor: 'transparent' }}>
+                    <Text style={{ fontSize: 48, fontFamily: 'DelaGothicOne_400Regular', backgroundColor: 'transparent' }}>
                       トレアラ
                     </Text>
                   }
@@ -363,18 +377,18 @@ export default function Index() {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
-                    <Text style={{ fontSize: 48, fontFamily: 'DotGothic16_400Regular', opacity: 0 }}>
+                    <Text style={{ fontSize: 48, fontFamily: 'DelaGothicOne_400Regular', opacity: 0 }}>
                       トレアラ
                     </Text>
                   </LinearGradient>
                 </MaskedView>
               ) : (
-                <Text style={[styles.title, { color: theme.text, fontSize: 48 }]}>トレアラ</Text>
+                <Text style={[styles.title, { color: theme.text, fontSize: 48, fontWeight: '900' }]}>トレアラ</Text>
               )}
             </View>
             <Link href="/settings" asChild>
               <TouchableOpacity style={{ padding: 8 }}>
-                <Ionicons name="menu" size={32} color={theme.text} />
+                <SquareHamburgerIcon color={theme.text} />
               </TouchableOpacity>
             </Link>
           </View>
